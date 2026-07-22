@@ -1,0 +1,33 @@
+{
+  "expo": {
+    "name": "United",
+    "slug": "United",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./src/assets/icone-untd.png",
+    "userInterfaceStyle": "light",
+    "newArchEnabled": true,
+    "splash": {
+      "image": "./src/assets/icone-untd.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
+    },
+    "ios": {
+      "supportsTablet": true
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./src/assets/icone-untd.png",
+        "backgroundColor": "#ffffff"
+      },
+      "edgeToEdgeEnabled": true
+    },
+    "web": {
+      "favicon": "./src/assets/icone-untd.png"
+    },
+    "plugins": [
+      "expo-font",
+      "expo-video"
+    ]
+  }
+}
