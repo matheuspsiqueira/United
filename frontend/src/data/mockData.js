@@ -12,6 +12,8 @@ export const CAMPUSES = [
     corTema: '#2E86AB',
     endereco: 'Av. das Américas, 1000 - Barra da Tijuca, Rio de Janeiro',
     pastores: ['Pr. João Ribeiro', 'Pra. Ana Ribeiro'],
+    fotoPastores: null, // placeholder — depois vira URL de imagem
+    anoFundacao: 2012,
     horarios: [
       { dia: 'Domingo', hora: '10h00' },
       { dia: 'Domingo', hora: '18h00' },
@@ -25,6 +27,8 @@ export const CAMPUSES = [
     corTema: '#8ea7a1',
     endereco: 'Estrada do Tindiba, 570 - Pechincha, Rio de Janeiro',
     pastores: ['Prs. Igor', 'Thayane Burlamaqui'],
+    fotoPastores: null,
+    anoFundacao: 2016,
     horarios: [
       { dia: 'Domingo', hora: '10:00' },
       { dia: 'Terça', hora: '10:00' },
@@ -38,6 +42,8 @@ export const CAMPUSES = [
     corTema: '#F18F01',
     endereco: 'Av. das Américas, 19000 - Recreio dos Bandeirantes, Rio de Janeiro',
     pastores: ['Pr. Rafael Souza'],
+    fotoPastores: null,
+    anoFundacao: 2018,
     horarios: [{ dia: 'Domingo', hora: '19h00' }],
   },
   {
@@ -47,6 +53,8 @@ export const CAMPUSES = [
     corTema: '#3B1F2B',
     endereco: 'Estrada de Curicica, 200 - Curicica, Rio de Janeiro',
     pastores: ['Pr. Diego Farias'],
+    fotoPastores: null,
+    anoFundacao: 2019,
     horarios: [{ dia: 'Domingo', hora: '18h30' }],
   },
   {
@@ -56,6 +64,8 @@ export const CAMPUSES = [
     corTema: '#6A994E',
     endereco: 'Estrada do Rio Grande, 300 - São João de Meriti',
     pastores: ['Pr. Marcos Lima'],
+    fotoPastores: null,
+    anoFundacao: 2020,
     horarios: [{ dia: 'Domingo', hora: '18h00' }],
   },
   {
@@ -65,6 +75,8 @@ export const CAMPUSES = [
     corTema: '#BC4749',
     endereco: 'Av. Paulista, 1000 - São Paulo',
     pastores: ['Pr. Eduardo Nogueira'],
+    fotoPastores: null,
+    anoFundacao: 2014,
     horarios: [{ dia: 'Domingo', hora: '10h00' }],
   },
   {
@@ -74,6 +86,8 @@ export const CAMPUSES = [
     corTema: '#386641',
     endereco: 'Av. Ibirapuera, 500 - São Paulo',
     pastores: ['Pr. Felipe Andrade'],
+    fotoPastores: null,
+    anoFundacao: 2017,
     horarios: [{ dia: 'Domingo', hora: '18h00' }],
   },
   {
@@ -83,6 +97,8 @@ export const CAMPUSES = [
     corTema: '#A7C957',
     endereco: 'Av. Radial Leste, 200 - São Paulo',
     pastores: ['Pr. Gustavo Reis'],
+    fotoPastores: null,
+    anoFundacao: 2021,
     horarios: [{ dia: 'Domingo', hora: '18h00' }],
   },
   {
@@ -92,18 +108,24 @@ export const CAMPUSES = [
     corTema: '#264653',
     endereco: 'Av. da Liberdade, 100 - Lisboa',
     pastores: ['Pr. Tiago Costa'],
+    fotoPastores: null,
+    anoFundacao: 2022,
     horarios: [{ dia: 'Domingo', hora: '11h00' }],
   },
 ];
 
-// Próximo culto calculado (mock estático só pra visual — no real isso vem do backend)
-export const PROXIMO_CULTO = {
-  campusId: 'pechincha',
-  data: '2026-07-26',
-  hora: '10h00',
-  status: 'normal', // normal | cancelado | alterado
-  observacao: null,
-};
+// Próximo culto por campus (mock estático só pra visual — no real vem do backend)
+export const PROXIMOS_CULTOS = [
+  { campusId: 'barra', data: '2026-07-26', hora: '10h00', status: 'normal', observacao: null },
+  { campusId: 'pechincha', data: '2026-07-26', hora: '10h00', status: 'normal', observacao: null },
+  { campusId: 'recreio', data: '2026-07-26', hora: '19h00', status: 'normal', observacao: null },
+  { campusId: 'curicica', data: '2026-07-26', hora: '18h30', status: 'normal', observacao: null },
+  { campusId: 'sao-joao', data: '2026-07-26', hora: '18h00', status: 'normal', observacao: null },
+  { campusId: 'sp-1', data: '2026-07-26', hora: '10h00', status: 'normal', observacao: null },
+  { campusId: 'sp-2', data: '2026-07-26', hora: '18h00', status: 'normal', observacao: null },
+  { campusId: 'sp-3', data: '2026-07-26', hora: '18h00', status: 'normal', observacao: null },
+  { campusId: 'portugal-1', data: '2026-07-26', hora: '11h00', status: 'normal', observacao: null },
+];
 
 export const EVENTOS = [
   {
@@ -164,13 +186,13 @@ export const AGENDA_CULTOS = [
 ];
 
 export const SOBRE_UNITED = {
-  visao: 'Ser uma igreja que transforma vidas através do evangelho de Jesus Cristo.',
-  missao: 'Alcançar, discipular e enviar.',
-  historia: 'A Igreja United nasceu em 2010 com um pequeno grupo de famílias no Rio de Janeiro...',
+  visao: '...',
+  missao: '...',
+  historia: '...',
   redes: {
     instagram: '@igrejaunited',
     youtube: 'Igreja United',
-    spotify: 'Igreja United Music',
+    spotify: 'Igreja United',
   },
 };
 
@@ -184,3 +206,6 @@ export const USUARIO_MOCK = {
 };
 
 export const getCampusById = (id) => CAMPUSES.find((c) => c.id === id);
+
+export const getProximoCultoByCampus = (campusId) =>
+  PROXIMOS_CULTOS.find((p) => p.campusId === campusId);

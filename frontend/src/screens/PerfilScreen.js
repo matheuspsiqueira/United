@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 
-import { COLORS } from '../theme/colors';
+import { COLORS, FONTS } from '../theme/colors';
 import { USUARIO_MOCK, getCampusById } from '../data/mockData';
 
 export default function PerfilScreen() {
@@ -12,7 +12,7 @@ export default function PerfilScreen() {
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <View style={styles.avatarSection}>
-        <View style={styles.avatarPlaceholder}>
+        <View style={[styles.avatarPlaceholder, { borderColor: campus.corTema }]}>
           <Ionicons name="person" size={40} color={COLORS.textSecondary} />
         </View>
         <Text style={styles.nome}>{USUARIO_MOCK.nome}</Text>
@@ -67,14 +67,15 @@ const styles = StyleSheet.create({
     height: 88,
     borderRadius: 44,
     backgroundColor: COLORS.surface,
+    borderWidth: 2,
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 12,
   },
-  nome: { fontSize: 18, fontWeight: '700', color: COLORS.textPrimary },
-  campusNome: { fontSize: 13, color: COLORS.textSecondary, marginTop: 2 },
+  nome: { fontSize: 18, fontFamily: FONTS.displaySemiBold, color: COLORS.textPrimary },
+  campusNome: { fontSize: 13, fontFamily: FONTS.bodyRegular, color: COLORS.textSecondary, marginTop: 2 },
   roleBadge: { marginTop: 8, paddingHorizontal: 12, paddingVertical: 4, borderRadius: 12 },
-  roleBadgeText: { color: '#FFF', fontSize: 12, fontWeight: '600' },
+  roleBadgeText: { color: '#FFF', fontSize: 12, fontFamily: FONTS.bodySemiBold },
 
   menu: { paddingHorizontal: 16, marginTop: 12 },
   menuItem: {
@@ -84,7 +85,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: COLORS.border,
   },
-  menuItemLabel: { marginLeft: 12, fontSize: 15, color: COLORS.textPrimary },
+  menuItemLabel: { marginLeft: 12, fontSize: 15, fontFamily: FONTS.bodyRegular, color: COLORS.textPrimary },
 
   voluntarioNote: {
     backgroundColor: COLORS.surface,
@@ -92,5 +93,5 @@ const styles = StyleSheet.create({
     padding: 12,
     marginVertical: 14,
   },
-  voluntarioNoteText: { fontSize: 12, color: COLORS.textSecondary, lineHeight: 18 },
+  voluntarioNoteText: { fontSize: 12, fontFamily: FONTS.bodyRegular, color: COLORS.textSecondary, lineHeight: 18 },
 });

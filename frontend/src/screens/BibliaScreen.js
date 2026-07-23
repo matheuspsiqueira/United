@@ -3,7 +3,7 @@ import { View, Text, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 
-import { COLORS } from '../theme/colors';
+import { COLORS, FONTS } from '../theme/colors';
 
 // SKELETON — a implementação completa (66 livros via API externa, versões
 // NVI/NTLH, grifo de versículos com 5 cores, favoritos) fica para a próxima
@@ -25,11 +25,12 @@ export default function BibliaScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.background, paddingHorizontal: 16 },
-  header: { fontSize: 22, fontWeight: '700', color: COLORS.textPrimary, marginVertical: 12 },
+  header: { fontSize: 22, fontFamily: FONTS.displayBold, color: COLORS.textPrimary, marginVertical: 12 },
   placeholder: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 32 },
   placeholderText: {
     textAlign: 'center',
     color: COLORS.textSecondary,
+    fontFamily: FONTS.bodyRegular,
     marginTop: 12,
     fontSize: 14,
   },

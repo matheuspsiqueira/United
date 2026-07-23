@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, ScrollView, StyleSheet } from 'react-native';
 
-import { COLORS } from '../theme/colors';
+import { COLORS, FONTS } from '../theme/colors';
 import { AGENDA_CULTOS } from '../data/mockData';
 
 const STATUS_LABEL = {
@@ -49,9 +49,16 @@ const styles = StyleSheet.create({
     padding: 14,
     marginBottom: 10,
   },
-  data: { fontSize: 14, color: COLORS.textPrimary, fontWeight: '600' },
-  hora: { fontSize: 13, color: COLORS.textSecondary, marginTop: 2 },
+  // Data/hora em mono — assinatura "TV guide" da tela de agenda.
+  data: { fontSize: 14, fontFamily: FONTS.mono, color: COLORS.textPrimary },
+  hora: { fontSize: 13, fontFamily: FONTS.mono, color: COLORS.textSecondary, marginTop: 2 },
   avisoContainer: { alignItems: 'flex-end', maxWidth: '55%' },
-  avisoLabel: { fontSize: 12, fontWeight: '700' },
-  observacao: { fontSize: 11, color: COLORS.textSecondary, marginTop: 2, textAlign: 'right' },
+  avisoLabel: { fontSize: 12, fontFamily: FONTS.bodySemiBold },
+  observacao: {
+    fontSize: 11,
+    fontFamily: FONTS.bodyRegular,
+    color: COLORS.textSecondary,
+    marginTop: 2,
+    textAlign: 'right',
+  },
 });

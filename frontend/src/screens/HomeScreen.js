@@ -5,19 +5,18 @@ import {
   ScrollView,
   StyleSheet,
   TouchableOpacity,
-  Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 
-import { COLORS } from '../theme/colors';
+import { COLORS, FONTS } from '../theme/colors';
 import {
   CAMPUSES,
-  PROXIMO_CULTO,
   EVENTOS,
   SERIES,
   USUARIO_MOCK,
   getCampusById,
+  getProximoCultoByCampus,
 } from '../data/mockData';
 
 export default function HomeScreen({ navigation }) {
@@ -26,6 +25,7 @@ export default function HomeScreen({ navigation }) {
   const campus = getCampusById(campusAtualId);
   const outrosCampuses = CAMPUSES.filter((c) => c.id !== campusAtualId);
 
+  const proximoCulto = getProximoCultoByCampus(campusAtualId);
   const eventosDoCampus = EVENTOS.filter((e) => e.campusId === campusAtualId);
   const serieDestaque = SERIES.find((s) => s.campusId === campusAtualId);
 
@@ -48,42 +48,31 @@ export default function HomeScreen({ navigation }) {
           </View>
         </View>
 
-        {/* Card Meu Campus */}
-        <View style={[styles.campusCard, { borderColor: campus.corTema }]}>
-          <View style={[styles.proximoCultoBanner, { backgroundColor: campus.corTema }]}>
+        {/* Banner Próximo culto — só lembrete, não navega */}
+        {proximoCulto && (
+          <View style={[styles.proximoCultoCard, { backgroundColor: campus.corTema }]}>
             <Ionicons name="calendar" size={18} color="#FFF" />
             <Text style={styles.proximoCultoText}>
-              Próximo culto: {formatarData(PROXIMO_CULTO.data)} às {PROXIMO_CULTO.hora}
+              Próximo culto: {formatarData(proximoCulto.data)} às {proximoCulto.hora}
             </Text>
           </View>
+        )}
 
-          <View style={styles.campusInfo}>
-            <Text style={styles.pastorLabel}>
-              {campus.pastores.length > 1 ? 'Pastores' : 'Pastor'}
-            </Text>
-            <Text style={styles.pastorNome}>{campus.pastores.join(' & ')}</Text>
-
-            <Text style={styles.enderecoText}>{campus.endereco}</Text>
-
-            <View style={styles.divider} />
-
-            <Text style={styles.horariosLabel}>Horários de culto</Text>
-            {campus.horarios.map((h, idx) => (
-              <View key={idx} style={styles.horarioRow}>
-                <Text style={styles.horarioDia}>{h.dia}</Text>
-                <Text style={styles.horarioHora}>{h.hora}</Text>
-              </View>
-            ))}
-          </View>
-        </View>
-
-        {/* Próximos eventos — renderização condicional */}
+        {/* Próximos eventos — renderização condicional, título navega pra Eventos */}
         {eventosDoCampus.length > 0 && (
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Próximos eventos</Text>
+            <TouchableOpacity onPress={() => navigation.navigate('Eventos')}>
+              <View style={styles.sectionHeaderRow}>
+                <Text style={styles.sectionTitle}>Próximos eventos</Text>
+                <Ionicons name="chevron-forward" size={18} color={COLORS.textSecondary} />
+              </View>
+            </TouchableOpacity>
             <ScrollView horizontal showsHorizontalScrollIndicator={false}>
               {eventosDoCampus.map((evento) => (
-                <View key={evento.id} style={styles.eventoCard}>
+                <View
+                  key={evento.id}
+                  style={[styles.eventoCard, { borderLeftColor: campus.corTema }]}
+                >
                   <Text style={styles.eventoData}>{formatarData(evento.data)}</Text>
                   <Text style={styles.eventoTitulo}>{evento.titulo}</Text>
                   <Text style={styles.eventoDescricao} numberOfLines={2}>
@@ -100,11 +89,11 @@ export default function HomeScreen({ navigation }) {
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Em destaque</Text>
             <TouchableOpacity
-              style={styles.destaqueCard}
+              style={[styles.destaqueCard, { borderLeftColor: campus.corTema }]}
               onPress={() => navigation.getParent()?.navigate('Series')}
             >
-              <View style={[styles.destaqueCapa, { backgroundColor: campus.corTema }]}>
-                <Ionicons name="play" size={28} color="#FFF" />
+              <View style={styles.destaqueCapa}>
+                <Ionicons name="play" size={28} color={campus.corTema} />
               </View>
               <View style={styles.destaqueInfo}>
                 <Text style={styles.destaqueMes}>{serieDestaque.mes}</Text>
@@ -127,14 +116,24 @@ export default function HomeScreen({ navigation }) {
               onPress={() => navigation.getParent()?.navigate('Series')}
             />
             <AcessoRapidoItem
+              icon="newspaper-outline"
+              label="Notícias"
+              onPress={() => navigation.navigate('Noticias')}
+            />
+            <AcessoRapidoItem
+              icon="megaphone-outline"
+              label="Eventos"
+              onPress={() => navigation.navigate('Eventos')}
+            />
+            <AcessoRapidoItem
               icon="book-outline"
               label="Bíblia"
               onPress={() => navigation.getParent()?.navigate('Biblia')}
             />
             <AcessoRapidoItem
-              icon="newspaper-outline"
-              label="Notícias"
-              onPress={() => navigation.navigate('Noticias')}
+              icon="location-outline"
+              label="Sobre o Campus"
+              onPress={() => navigation.navigate('SobreCampus')}
             />
             <AcessoRapidoItem
               icon="information-circle-outline"
@@ -149,7 +148,11 @@ export default function HomeScreen({ navigation }) {
           <Text style={styles.exploreLabel}>Explorar outros campi</Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false}>
             {outrosCampuses.map((c) => (
-              <TouchableOpacity key={c.id} style={styles.chip}>
+              <TouchableOpacity
+                key={c.id}
+                style={styles.chip}
+                onPress={() => navigation.navigate('SobreCampus', { campusId: c.id })}
+              >
                 <View style={[styles.chipDot, { backgroundColor: c.corTema }]} />
                 <Text style={styles.chipText}>{c.nome}</Text>
               </TouchableOpacity>
@@ -184,58 +187,90 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 12,
   },
-  headerCampus: { fontSize: 20, fontWeight: '700', color: COLORS.textPrimary },
+  headerCampus: { fontSize: 20, fontFamily: FONTS.displaySemiBold, color: COLORS.textPrimary },
   headerIcons: { flexDirection: 'row' },
   iconButton: { marginLeft: 12 },
 
-  campusCard: {
-    marginHorizontal: 16,
-    borderRadius: 16,
-    borderWidth: 1,
-    overflow: 'hidden',
-    backgroundColor: COLORS.surface,
-  },
-  proximoCultoBanner: {
+  proximoCultoCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 12,
+    marginHorizontal: 16,
+    borderRadius: 12,
+    padding: 14,
   },
-  proximoCultoText: { color: '#FFF', fontWeight: '600', marginLeft: 8, fontSize: 13 },
-  campusInfo: { padding: 16 },
-  pastorLabel: { fontSize: 12, color: COLORS.textSecondary },
-  pastorNome: { fontSize: 16, fontWeight: '600', color: COLORS.textPrimary, marginTop: 2 },
-  enderecoText: { fontSize: 13, color: COLORS.textSecondary, marginTop: 6 },
-  divider: { height: 1, backgroundColor: COLORS.border, marginVertical: 12 },
-  horariosLabel: { fontSize: 12, color: COLORS.textSecondary, marginBottom: 6 },
-  horarioRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 },
-  horarioDia: { fontSize: 14, color: COLORS.textPrimary },
-  horarioHora: { fontSize: 14, fontWeight: '600', color: COLORS.textPrimary },
+  proximoCultoText: {
+    color: '#FFF',
+    fontFamily: FONTS.bodySemiBold,
+    marginLeft: 8,
+    fontSize: 13,
+  },
 
   section: { marginTop: 24, paddingHorizontal: 16 },
-  sectionTitle: { fontSize: 16, fontWeight: '700', color: COLORS.textPrimary, marginBottom: 10 },
+  sectionHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 10,
+  },
+  sectionTitle: {
+    fontSize: 16,
+    fontFamily: FONTS.displaySemiBold,
+    color: COLORS.textPrimary,
+    marginBottom: 10,
+  },
 
+  // Cards com "channel spine": barra lateral fina na cor do campus,
+  // reforçando a metáfora de streaming/TV guide.
   eventoCard: {
     width: 200,
     backgroundColor: COLORS.surface,
     borderRadius: 12,
+    borderLeftWidth: 3,
     padding: 12,
     marginRight: 10,
   },
-  eventoData: { fontSize: 12, color: COLORS.textSecondary },
-  eventoTitulo: { fontSize: 14, fontWeight: '600', marginTop: 4, color: COLORS.textPrimary },
-  eventoDescricao: { fontSize: 12, color: COLORS.textSecondary, marginTop: 4 },
+  eventoData: { fontSize: 12, fontFamily: FONTS.mono, color: COLORS.textSecondary },
+  eventoTitulo: {
+    fontSize: 14,
+    fontFamily: FONTS.bodySemiBold,
+    marginTop: 4,
+    color: COLORS.textPrimary,
+  },
+  eventoDescricao: {
+    fontSize: 12,
+    fontFamily: FONTS.bodyRegular,
+    color: COLORS.textSecondary,
+    marginTop: 4,
+  },
 
   destaqueCard: {
     flexDirection: 'row',
     backgroundColor: COLORS.surface,
     borderRadius: 12,
+    borderLeftWidth: 3,
     overflow: 'hidden',
   },
-  destaqueCapa: { width: 80, height: 80, justifyContent: 'center', alignItems: 'center' },
+  destaqueCapa: {
+    width: 80,
+    height: 80,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: COLORS.surfaceElevated,
+  },
   destaqueInfo: { flex: 1, padding: 12, justifyContent: 'center' },
-  destaqueMes: { fontSize: 11, color: COLORS.textSecondary },
-  destaqueTitulo: { fontSize: 15, fontWeight: '700', color: COLORS.textPrimary, marginTop: 2 },
-  destaqueEpisodios: { fontSize: 12, color: COLORS.textSecondary, marginTop: 4 },
+  destaqueMes: { fontSize: 11, fontFamily: FONTS.mono, color: COLORS.textSecondary },
+  destaqueTitulo: {
+    fontSize: 15,
+    fontFamily: FONTS.displaySemiBold,
+    color: COLORS.textPrimary,
+    marginTop: 2,
+  },
+  destaqueEpisodios: {
+    fontSize: 12,
+    fontFamily: FONTS.bodyRegular,
+    color: COLORS.textSecondary,
+    marginTop: 4,
+  },
 
   gridContainer: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' },
   gridItem: {
@@ -246,10 +281,20 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 12,
   },
-  gridItemLabel: { marginTop: 8, fontSize: 13, fontWeight: '600', color: COLORS.textPrimary },
+  gridItemLabel: {
+    marginTop: 8,
+    fontSize: 13,
+    fontFamily: FONTS.bodySemiBold,
+    color: COLORS.textPrimary,
+  },
 
   exploreSection: { marginTop: 20, marginBottom: 24, paddingLeft: 16 },
-  exploreLabel: { fontSize: 12, color: COLORS.textSecondary, marginBottom: 8 },
+  exploreLabel: {
+    fontSize: 12,
+    fontFamily: FONTS.bodyRegular,
+    color: COLORS.textSecondary,
+    marginBottom: 8,
+  },
   chip: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -260,5 +305,5 @@ const styles = StyleSheet.create({
     marginRight: 8,
   },
   chipDot: { width: 8, height: 8, borderRadius: 4, marginRight: 6 },
-  chipText: { fontSize: 13, color: COLORS.textPrimary },
+  chipText: { fontSize: 13, fontFamily: FONTS.bodyRegular, color: COLORS.textPrimary },
 });

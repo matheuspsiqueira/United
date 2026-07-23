@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, ScrollView, StyleSheet } from 'react-native';
 
-import { COLORS } from '../theme/colors';
+import { COLORS, FONTS } from '../theme/colors';
 import { SOBRE_UNITED, CAMPUSES } from '../data/mockData';
 
 export default function SobreUnitedScreen() {
@@ -45,8 +45,8 @@ function Section({ title, children }) {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.background },
   section: { marginBottom: 20 },
-  sectionTitle: { fontSize: 15, fontWeight: '700', color: COLORS.textPrimary, marginBottom: 6 },
-  text: { fontSize: 14, color: COLORS.textSecondary, lineHeight: 20 },
+  sectionTitle: { fontSize: 15, fontFamily: FONTS.displaySemiBold, color: COLORS.textPrimary, marginBottom: 6 },
+  text: { fontSize: 14, fontFamily: FONTS.bodyRegular, color: COLORS.textSecondary, lineHeight: 20 },
   campusRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 4 },
   dot: { width: 8, height: 8, borderRadius: 4, marginRight: 8 },
 });
