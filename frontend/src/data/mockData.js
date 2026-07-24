@@ -26,7 +26,7 @@ export const CAMPUSES = [
     regiao: 'RJ',
     corTema: '#8ea7a1',
     endereco: 'Estrada do Tindiba, 570 - Pechincha, Rio de Janeiro',
-    pastores: ['Prs. Igor', 'Thayane Burlamaqui'],
+    pastores: ['Igor Burlamaqui', '                     Thayane Burlamaqui'],
     fotoPastores: null,
     anoFundacao: 2016,
     horarios: [
