@@ -26,3 +26,13 @@ export const FONTS = {
   bodySemiBold: 'Inter_600SemiBold',
   mono: 'JetBrainsMono_500Medium',
 };
+
+// Tons pra grifo de versículo — abafados de propósito, pra não competir
+// com o texto num fundo escuro. Usados no menu flutuante de 5 cores.
+export const HIGHLIGHT_COLORS = {
+  amber:  '#D9A441',
+  rose:   '#D97C86',
+  teal:   '#4FA6A0',
+  violet: '#9B8AD9',
+  sage:   '#7FA66B',
+};
