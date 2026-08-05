@@ -1,33 +1,72 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
   ScrollView,
   StyleSheet,
   TouchableOpacity,
+  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 
 import { COLORS, FONTS } from '../theme/colors';
-import {
-  CAMPUSES,
-  EVENTOS,
-  SERIES,
-  USUARIO_MOCK,
-  getCampusById,
-  getProximoCultoByCampus,
-} from '../data/mockData';
+import { getCampuses, getProximoCulto } from '../services/campusApi';
+import { EVENTOS, SERIES, USUARIO_MOCK } from '../data/mockData';
 
 export default function HomeScreen({ navigation }) {
-  // No app real, o campus do usuário vem do estado global/auth.
-  const [campusAtualId] = useState(USUARIO_MOCK.campusId);
-  const campus = getCampusById(campusAtualId);
-  const outrosCampuses = CAMPUSES.filter((c) => c.id !== campusAtualId);
+  const campusAtualId = USUARIO_MOCK.campusId;
 
-  const proximoCulto = getProximoCultoByCampus(campusAtualId);
-  const eventosDoCampus = EVENTOS.filter((e) => e.campusId === campusAtualId);
-  const serieDestaque = SERIES.find((s) => s.campusId === campusAtualId);
+  const [campuses, setCampuses] = useState([]);
+  const [proximoCulto, setProximoCulto] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [erro, setErro] = useState(null);
+
+  const carregar = useCallback(() => {
+    setLoading(true);
+    setErro(null);
+    Promise.all([getCampuses(), getProximoCulto(campusAtualId)])
+      .then(([listaCampuses, culto]) => {
+        setCampuses(listaCampuses);
+        setProximoCulto(culto);
+      })
+      .catch((e) => setErro(e.message))
+      .finally(() => setLoading(false));
+  }, [campusAtualId]);
+
+  useEffect(() => {
+    carregar();
+  }, [carregar]);
+
+  if (loading) {
+    return (
+      <SafeAreaView style={[styles.container, styles.centered]} edges={['top']}>
+        <ActivityIndicator color={COLORS.textPrimary} />
+      </SafeAreaView>
+    );
+  }
+
+  if (erro) {
+    return (
+      <SafeAreaView style={[styles.container, styles.centered]} edges={['top']}>
+        <Text style={styles.erroText}>Não foi possível carregar a Home.</Text>
+        <TouchableOpacity onPress={carregar} style={styles.retryButton}>
+          <Text style={styles.retryText}>Tentar de novo</Text>
+        </TouchableOpacity>
+      </SafeAreaView>
+    );
+  }
+
+  const campus = campuses.find((c) => c.id === campusAtualId);
+  if (!campus) return null; // campus do usuário ainda não está na lista retornada
+
+  const outrosCampuses = campuses.filter((c) => c.id !== campusAtualId);
+
+  // TODO BACKEND: EVENTOS e SERIES ainda são mock — filtram por campusId
+  // como string ('pechincha'). Precisam migrar pro app `conteudo` e passar
+  // a usar o id inteiro real assim que os serializers existirem.
+  const eventosDoCampus = EVENTOS.filter((e) => e.campusId === 'pechincha');
+  const serieDestaque = SERIES.find((s) => s.campusId === 'pechincha');
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -48,7 +87,7 @@ export default function HomeScreen({ navigation }) {
           </View>
         </View>
 
-        {/* Banner Próximo culto — só lembrete, não navega */}
+        {/* Banner Próximo culto */}
         {proximoCulto && (
           <View style={[styles.proximoCultoCard, { backgroundColor: campus.corTema }]}>
             <Ionicons name="calendar" size={18} color="#FFF" />
@@ -58,7 +97,7 @@ export default function HomeScreen({ navigation }) {
           </View>
         )}
 
-        {/* Próximos eventos — renderização condicional, título navega pra Eventos */}
+        {/* Próximos eventos */}
         {eventosDoCampus.length > 0 && (
           <View style={styles.section}>
             <TouchableOpacity onPress={() => navigation.navigate('Eventos')}>
@@ -143,22 +182,24 @@ export default function HomeScreen({ navigation }) {
           </View>
         </View>
 
-        {/* Explorar outros campi — discreto */}
-        <View style={styles.exploreSection}>
-          <Text style={styles.exploreLabel}>Explorar outros campi</Text>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-            {outrosCampuses.map((c) => (
-              <TouchableOpacity
-                key={c.id}
-                style={styles.chip}
-                onPress={() => navigation.navigate('SobreCampus', { campusId: c.id })}
-              >
-                <View style={[styles.chipDot, { backgroundColor: c.corTema }]} />
-                <Text style={styles.chipText}>{c.nome}</Text>
-              </TouchableOpacity>
-            ))}
-          </ScrollView>
-        </View>
+        {/* Explorar outros campi */}
+        {outrosCampuses.length > 0 && (
+          <View style={styles.exploreSection}>
+            <Text style={styles.exploreLabel}>Explorar outros campi</Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+              {outrosCampuses.map((c) => (
+                <TouchableOpacity
+                  key={c.id}
+                  style={styles.chip}
+                  onPress={() => navigation.navigate('SobreCampus', { campusId: c.id })}
+                >
+                  <View style={[styles.chipDot, { backgroundColor: c.corTema }]} />
+                  <Text style={styles.chipText}>{c.nome}</Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          </View>
+        )}
       </ScrollView>
     </SafeAreaView>
   );
@@ -180,6 +221,11 @@ function formatarData(dataStr) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.background },
+  centered: { justifyContent: 'center', alignItems: 'center' },
+  erroText: { color: COLORS.textSecondary, fontFamily: FONTS.bodyRegular, marginBottom: 12 },
+  retryButton: { paddingHorizontal: 16, paddingVertical: 8, backgroundColor: COLORS.surface, borderRadius: 8 },
+  retryText: { color: COLORS.textPrimary, fontFamily: FONTS.bodySemiBold },
+
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -219,8 +265,6 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
 
-  // Cards com "channel spine": barra lateral fina na cor do campus,
-  // reforçando a metáfora de streaming/TV guide.
   eventoCard: {
     width: 200,
     backgroundColor: COLORS.surface,

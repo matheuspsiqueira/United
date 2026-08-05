@@ -199,7 +199,7 @@ export const SOBRE_UNITED = {
 export const USUARIO_MOCK = {
   id: 'user1',
   nome: 'Matheus Siqueira',
-  campusId: 'pechincha',
+  campusId: 1,
   role: 'membro', // membro | voluntario
   fotoUrl: null,
   versiculosFavoritos: [],
