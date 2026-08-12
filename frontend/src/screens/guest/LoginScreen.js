@@ -7,19 +7,32 @@ import {
   StyleSheet,
   KeyboardAvoidingView,
   Platform,
+  ActivityIndicator,
 } from 'react-native';
 
 import { COLORS, FONTS } from '../../theme/colors';
+import { useAuth } from '../../contexts/AuthContext';
 
-export default function LoginScreen({ onLoginSuccess }) {
+export default function LoginScreen() {
+  const { login } = useAuth();
   const [usuario, setUsuario] = useState('');
   const [senha, setSenha] = useState('');
+  const [erro, setErro] = useState(null);
+  const [loading, setLoading] = useState(false);
 
-  const handleSubmit = () => {
-    // MOCK: qualquer valor loga com sucesso, só pra validar a transição
-    // Guest -> Home. Quando o backend existir, entra aqui a chamada real
-    // ao DRF (POST /api/auth/login/) e o tratamento de erro de credenciais.
-    onLoginSuccess();
+  const handleSubmit = async () => {
+    if (!usuario || !senha) return;
+    setErro(null);
+    setLoading(true);
+    try {
+      await login(usuario, senha);
+      // isAuthenticated vira true no contexto -> AppNavigator troca
+      // pro RootNavigator sozinho, sem precisar navegar manualmente aqui.
+    } catch (e) {
+      setErro(e.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -54,8 +67,19 @@ export default function LoginScreen({ onLoginSuccess }) {
         />
       </View>
 
-      <TouchableOpacity style={styles.button} activeOpacity={0.85} onPress={handleSubmit}>
-        <Text style={styles.buttonText}>Entrar</Text>
+      {erro && <Text style={styles.erroText}>{erro}</Text>}
+
+      <TouchableOpacity
+        style={styles.button}
+        activeOpacity={0.85}
+        onPress={handleSubmit}
+        disabled={loading}
+      >
+        {loading ? (
+          <ActivityIndicator color={COLORS.background} />
+        ) : (
+          <Text style={styles.buttonText}>Entrar</Text>
+        )}
       </TouchableOpacity>
     </KeyboardAvoidingView>
   );
@@ -88,6 +112,12 @@ const styles = StyleSheet.create({
     fontFamily: FONTS.bodyRegular,
     fontSize: 14,
     color: COLORS.textPrimary,
+  },
+  erroText: {
+    fontFamily: FONTS.bodyRegular,
+    fontSize: 13,
+    color: COLORS.danger,
+    marginBottom: 12,
   },
   button: {
     backgroundColor: COLORS.textPrimary,

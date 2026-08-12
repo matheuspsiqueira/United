@@ -13,7 +13,7 @@ const Stack = createNativeStackNavigator();
 
 // Bíblia e Sobre a United são as MESMAS telas usadas no app autenticado —
 // nenhum conteúdo especial de visitante nelas, só reaproveitando.
-export default function GuestNavigator({ onLoginSuccess }) {
+export default function GuestNavigator() {
   return (
     <Stack.Navigator
       screenOptions={{
@@ -43,9 +43,7 @@ export default function GuestNavigator({ onLoginSuccess }) {
         component={CampusDetailScreen}
         options={{ title: '' }}
       />
-      <Stack.Screen name="Login" options={{ title: 'Entrar' }}>
-        {(props) => <LoginScreen {...props} onLoginSuccess={onLoginSuccess} />}
-      </Stack.Screen>
+      <Stack.Screen name="Login" component={LoginScreen} options={{ title: 'Entrar' }} />
     </Stack.Navigator>
   );
 }

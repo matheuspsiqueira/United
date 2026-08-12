@@ -1,38 +1,40 @@
-import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 
 import { COLORS, FONTS } from '../theme/colors';
-import { USUARIO_MOCK, getCampusById } from '../data/mockData';
+import { useAuth } from '../contexts/AuthContext';
+import EditarDadosModal from './modals/EditarDadosPessoais';
 
 export default function PerfilScreen() {
-  const campus = getCampusById(USUARIO_MOCK.campusId);
+  const { usuario, logout } = useAuth();
+  const [modalVisivel, setModalVisivel] = useState(false);
+
+  if (!usuario) return null;
+
+  const campus = usuario.campus;
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <View style={styles.avatarSection}>
-        <View style={[styles.avatarPlaceholder, { borderColor: campus.corTema }]}>
+        <View style={[styles.avatarPlaceholder, { borderColor: campus?.corTema || COLORS.border }]}>
           <Ionicons name="person" size={40} color={COLORS.textSecondary} />
         </View>
-        <Text style={styles.nome}>{USUARIO_MOCK.nome}</Text>
-        <Text style={styles.campusNome}>{campus.nome}</Text>
-        <View style={[styles.roleBadge, { backgroundColor: campus.corTema }]}>
+        <Text style={styles.nome}>{usuario.nome_completo}</Text>
+        <Text style={styles.campusNome}>{campus?.nome}</Text>
+        <View style={[styles.roleBadge, { backgroundColor: campus?.corTema || COLORS.surface }]}>
           <Text style={styles.roleBadgeText}>
-            {USUARIO_MOCK.role === 'voluntario' ? 'Voluntário' : 'Membro'}
+            {usuario.role === 'voluntario' ? 'Voluntário' : 'Membro'}
           </Text>
         </View>
       </View>
 
       <View style={styles.menu}>
-        <MenuItem
-          icon="bookmark-outline"
-          label={`Versículos favoritos (${USUARIO_MOCK.versiculosFavoritos.length})`}
-        />
-        <MenuItem icon="swap-horizontal-outline" label="Alterar campus" />
-        <MenuItem icon="create-outline" label="Editar dados pessoais" />
+        <MenuItem icon="bookmark-outline" label="Versículos favoritos" />
+        <MenuItem icon="create-outline" label="Editar dados pessoais" onPress={() => setModalVisivel(true)} />
 
-        {USUARIO_MOCK.role !== 'voluntario' && (
+        {usuario.role !== 'voluntario' && (
           <View style={styles.voluntarioNote}>
             <Text style={styles.voluntarioNoteText}>
               Funcionalidades de voluntário (escala, check-in) aparecerão aqui
@@ -41,15 +43,17 @@ export default function PerfilScreen() {
           </View>
         )}
 
-        <MenuItem icon="log-out-outline" label="Sair" danger />
+        <MenuItem icon="log-out-outline" label="Sair" danger onPress={logout} />
       </View>
+
+      <EditarDadosModal visible={modalVisivel} onClose={() => setModalVisivel(false)} />
     </SafeAreaView>
   );
 }
 
-function MenuItem({ icon, label, danger }) {
+function MenuItem({ icon, label, danger, onPress }) {
   return (
-    <TouchableOpacity style={styles.menuItem}>
+    <TouchableOpacity style={styles.menuItem} onPress={onPress}>
       <Ionicons name={icon} size={20} color={danger ? COLORS.danger : COLORS.textPrimary} />
       <Text style={[styles.menuItemLabel, danger && { color: COLORS.danger }]}>{label}</Text>
       {!danger && (
