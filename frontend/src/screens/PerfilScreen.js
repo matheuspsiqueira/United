@@ -1,15 +1,17 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 
 import { COLORS, FONTS } from '../theme/colors';
 import { useAuth } from '../contexts/AuthContext';
 import EditarDadosModal from './modals/EditarDadosPessoais';
+import VersiculosFavoritosModal from './modals/VersiculosFavoritos';
 
 export default function PerfilScreen() {
   const { usuario, logout } = useAuth();
-  const [modalVisivel, setModalVisivel] = useState(false);
+  const [modalDadosVisivel, setModalDadosVisivel] = useState(false);
+  const [modalVersiculosVisivel, setModalVersiculosVisivel] = useState(false);
 
   if (!usuario) return null;
 
@@ -19,7 +21,14 @@ export default function PerfilScreen() {
     <SafeAreaView style={styles.container} edges={['top']}>
       <View style={styles.avatarSection}>
         <View style={[styles.avatarPlaceholder, { borderColor: campus?.corTema || COLORS.border }]}>
-          <Ionicons name="person" size={40} color={COLORS.textSecondary} />
+          {usuario.foto_perfil ? (
+            <Image
+              source={{ uri: usuario.foto_perfil, headers: { 'ngrok-skip-browser-warning': 'true' } }}
+              style={styles.avatarImage}
+            />
+          ) : (
+            <Ionicons name="person" size={40} color={COLORS.textSecondary} />
+          )}
         </View>
         <Text style={styles.nome}>{usuario.nome_completo}</Text>
         <Text style={styles.campusNome}>{campus?.nome}</Text>
@@ -31,8 +40,8 @@ export default function PerfilScreen() {
       </View>
 
       <View style={styles.menu}>
-        <MenuItem icon="bookmark-outline" label="Versículos favoritos" />
-        <MenuItem icon="create-outline" label="Editar dados pessoais" onPress={() => setModalVisivel(true)} />
+        <MenuItem icon="bookmark-outline" label="Versículos favoritos" onPress={() => setModalVersiculosVisivel(true)} />
+        <MenuItem icon="create-outline" label="Editar dados pessoais" onPress={() => setModalDadosVisivel(true)} />
 
         {usuario.role !== 'voluntario' && (
           <View style={styles.voluntarioNote}>
@@ -46,7 +55,8 @@ export default function PerfilScreen() {
         <MenuItem icon="log-out-outline" label="Sair" danger onPress={logout} />
       </View>
 
-      <EditarDadosModal visible={modalVisivel} onClose={() => setModalVisivel(false)} />
+      <EditarDadosModal visible={modalDadosVisivel} onClose={() => setModalDadosVisivel(false)} />
+      <VersiculosFavoritosModal visible={modalVersiculosVisivel} onClose={() => setModalVersiculosVisivel(false)} />
     </SafeAreaView>
   );
 }
@@ -75,7 +85,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 12,
+    overflow: 'hidden',
   },
+  avatarImage: { width: '100%', height: '100%' },
   nome: { fontSize: 18, fontFamily: FONTS.displaySemiBold, color: COLORS.textPrimary },
   campusNome: { fontSize: 13, fontFamily: FONTS.bodyRegular, color: COLORS.textSecondary, marginTop: 2 },
   roleBadge: { marginTop: 8, paddingHorizontal: 12, paddingVertical: 4, borderRadius: 12 },

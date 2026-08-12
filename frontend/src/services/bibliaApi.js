@@ -1,16 +1,6 @@
-// Client fino para a API pública da Bíblia (Midvash).
-// Sem auth, sem chaves — chamadas diretas.
-// Docs: https://api.midvash.com/pt-br
 
 const BASE_URL = 'https://api.midvash.com/v1';
 
-// TODO BACKEND: grifos/favoritos de versículo hoje vivem só em AsyncStorage
-// local (BibliaScreen.js, chave '@united:biblia:grifos'), porque ainda não
-// existe conta/auth real. Isso é o mock temporário de um campo que deveria
-// ser usuario.versiculos_favoritos no Django (provavelmente tabela
-// relacionada, tipo VersiculoFavorito(usuario, verse_id, cor)).
-// Quando o backend entrar: trocar getItem/setItem por GET/POST na API,
-// mantendo o mesmo shape { [verseId]: corHex } — a UI não precisa mudar.
 
 class BibliaApiError extends Error {
   constructor(message, status) {

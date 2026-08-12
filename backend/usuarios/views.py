@@ -7,7 +7,8 @@ from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from .serializers import UsuarioSerializer, UsuarioUpdateSerializer
+from .models import VersiculoFavorito
+from .serializers import UsuarioSerializer, UsuarioUpdateSerializer, VersiculoFavoritoSerializer
 
 
 class LoginView(APIView):
@@ -34,7 +35,7 @@ class LoginView(APIView):
         token, _ = Token.objects.get_or_create(user=usuario)
         return Response({
             'token': token.key,
-            'usuario': UsuarioSerializer(usuario).data,
+            'usuario': UsuarioSerializer(usuario, context={'request': request}).data,
         })
 
 
@@ -44,13 +45,13 @@ class MeView(APIView):
     parser_classes = [MultiPartParser, FormParser, JSONParser]
 
     def get(self, request):
-        return Response(UsuarioSerializer(request.user).data)
+        return Response(UsuarioSerializer(request.user, context={'request': request}).data)
 
     def patch(self, request):
         serializer = UsuarioUpdateSerializer(request.user, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
         serializer.save()
-        return Response(UsuarioSerializer(request.user).data)
+        return Response(UsuarioSerializer(request.user, context={'request': request}).data)
 
 
 class TrocarSenhaView(APIView):
@@ -85,4 +86,42 @@ class TrocarSenhaView(APIView):
         usuario.senha_temporaria = False
         usuario.save()
 
-        return Response(UsuarioSerializer(usuario).data)
+        return Response(UsuarioSerializer(usuario, context={'request': request}).data)
+
+
+class VersiculosFavoritosView(APIView):
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        favoritos = VersiculoFavorito.objects.filter(usuario=request.user)
+        return Response(VersiculoFavoritoSerializer(favoritos, many=True).data)
+
+    def post(self, request):
+        verse_id = request.data.get('verse_id')
+        cor = request.data.get('cor')
+
+        if not verse_id or not cor:
+            return Response(
+                {'detail': 'verse_id e cor são obrigatórios.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        favorito, _ = VersiculoFavorito.objects.update_or_create(
+            usuario=request.user, verse_id=verse_id,
+            defaults={'cor': cor},
+        )
+        return Response(VersiculoFavoritoSerializer(favorito).data)
+
+
+class VersiculoFavoritoDetailView(APIView):
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def delete(self, request, verse_id):
+        apagados, _ = VersiculoFavorito.objects.filter(
+            usuario=request.user, verse_id=verse_id,
+        ).delete()
+        if not apagados:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+        return Response(status=status.HTTP_204_NO_CONTENT)

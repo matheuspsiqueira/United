@@ -11,10 +11,11 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import { COLORS, FONTS, HIGHLIGHT_COLORS } from '../theme/colors';
 import { getLivros, getCapitulo } from '../services/bibliaApi';
+import { getGrifos, salvarGrifo, removerGrifoApi } from '../services/versiculosApi';
+import { useAuth } from '../contexts/AuthContext';
 
 // A API devolve nome/título/slug como objeto multilíngue: { en, 'pt-br', es, ... }.
 // Extrai o português, com fallback pro inglês e por último pra string crua
@@ -41,15 +42,9 @@ const VERSOES = [
 
 const HIGHLIGHT_LIST = Object.values(HIGHLIGHT_COLORS);
 
-// Grifar = favoritar (ação única). O versículo marcado com uma cor É o
-// favorito — não existem dois estados separados. Persistido localmente
-// via AsyncStorage por enquanto (ver TODO BACKEND em bibliaApi.js);
-// quando o Django existir, isso migra pra usuario.versiculos_favoritos
-// mantendo o mesmo shape { [verseId]: corHex }.
-const GRIFOS_STORAGE_KEY = '@united:biblia:grifos';
-
 export default function BibliaScreen({ route }) {
   const corTema = route?.params?.corTema || COLORS.textPrimary;
+  const { token } = useAuth();
 
   const [versao, setVersao] = useState('nvi');
   const [livros, setLivros] = useState([]);
@@ -68,33 +63,31 @@ export default function BibliaScreen({ route }) {
 
   const [versiculoSelecionadoId, setVersiculoSelecionadoId] = useState(null);
   const [grifos, setGrifos] = useState({}); // { [verseId]: corHex } — grifo = favorito
-  const [grifosCarregados, setGrifosCarregados] = useState(false);
 
-  // ---- Carrega os grifos salvos (AsyncStorage) na montagem ----
+  // ---- Carrega os grifos salvos na API sempre que o login muda ----
+  // (guest sem token: começa vazio e fica só em memória, sem persistência)
   useEffect(() => {
+    if (!token) {
+      setGrifos({});
+      return;
+    }
     let cancelado = false;
-    AsyncStorage.getItem(GRIFOS_STORAGE_KEY)
-      .then((json) => {
+    getGrifos(token)
+      .then((lista) => {
         if (cancelado) return;
-        if (json) setGrifos(JSON.parse(json));
+        const mapa = {};
+        (lista || []).forEach((item) => {
+          mapa[item.verse_id] = item.cor;
+        });
+        setGrifos(mapa);
       })
       .catch(() => {
         // leitura falhou — segue com grifos vazios, não é crítico
-      })
-      .finally(() => {
-        if (!cancelado) setGrifosCarregados(true);
       });
     return () => {
       cancelado = true;
     };
-  }, []);
-
-  // ---- Salva os grifos sempre que mudam (só depois do load inicial, pra
-  // não sobrescrever o storage com {} antes de ler o que já existia) ----
-  useEffect(() => {
-    if (!grifosCarregados) return;
-    AsyncStorage.setItem(GRIFOS_STORAGE_KEY, JSON.stringify(grifos)).catch(() => {});
-  }, [grifos, grifosCarregados]);
+  }, [token]);
 
   // ---- Carrega a lista dos 66 livros na montagem ----
   useEffect(() => {
@@ -181,19 +174,39 @@ export default function BibliaScreen({ route }) {
     setVersiculoSelecionadoId((atual) => (atual === id ? null : id));
   };
 
+  // Update otimista: a UI já reflete a mudança na hora; se a chamada à API
+  // falhar, desfaz. Sem token (guest), fica só em memória mesmo.
   const aplicarGrifo = (cor) => {
     if (!versiculoSelecionadoId) return;
-    setGrifos((atual) => ({ ...atual, [versiculoSelecionadoId]: cor }));
+    const id = versiculoSelecionadoId;
+    const corAnterior = grifos[id];
+
+    setGrifos((atual) => ({ ...atual, [id]: cor }));
+
+    if (token) {
+      salvarGrifo(token, id, cor).catch(() => {
+        setGrifos((atual) => ({ ...atual, [id]: corAnterior }));
+      });
+    }
   };
 
   const removerGrifo = () => {
     if (!versiculoSelecionadoId) return;
+    const id = versiculoSelecionadoId;
+    const corAnterior = grifos[id];
+
     setGrifos((atual) => {
       const copia = { ...atual };
-      delete copia[versiculoSelecionadoId];
+      delete copia[id];
       return copia;
     });
     setVersiculoSelecionadoId(null);
+
+    if (token && corAnterior) {
+      removerGrifoApi(token, id).catch(() => {
+        setGrifos((atual) => ({ ...atual, [id]: corAnterior }));
+      });
+    }
   };
 
   // Normaliza a lista de versículos do capítulo. O payload exato do
@@ -265,7 +278,7 @@ export default function BibliaScreen({ route }) {
           onScrollBeginDrag={() => setVersiculoSelecionadoId(null)}
         >
           {versiculosNormalizados.map((v) => {
-            const id = `${versao}-${slugLivroAtivo}-${capituloAtivo}-${v.numero}`;
+            const id = `${versao}|${slugLivroAtivo}|${capituloAtivo}|${v.numero}`;
             const grifo = grifos[id];
             const selecionado = versiculoSelecionadoId === id;
 
