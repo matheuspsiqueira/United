@@ -6,19 +6,38 @@ import {
   StyleSheet,
   TouchableOpacity,
   ActivityIndicator,
+  Dimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { BlurView } from 'expo-blur';
 
 import { COLORS, FONTS } from '../theme/colors';
 import { getCampusAccent } from '../theme/campusAccent';
+import GlassSurface from '../components/GlassSurface';
+import { useAuth } from '../contexts/AuthContext';
 import { getCampuses, getProximoCulto } from '../services/campusApi';
-import { EVENTOS, SERIES, USUARIO_MOCK } from '../data/mockData';
+import { EVENTOS, SERIES } from '../data/mockData';
+
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
+const SCREEN_PADDING = 16;
+const EVENTO_GAP = 12;
+// Largura calculada pra caber ~2 cards por tela (com uma leve folga do
+// terceiro aparecendo na borda, indicando que rola) — se SCREEN_PADDING
+// mudar no resto da tela, ajustar aqui também.
+const EVENTO_CARD_SIZE = (SCREEN_WIDTH - SCREEN_PADDING * 2 - EVENTO_GAP) / 2;
+
+// Degradês só decorativos pros cards que ainda não têm foto de capa real
+// (Eventos e Série do mês ainda são mock, sem campo de imagem migrado).
+const PLACEHOLDER_GRADIENTS = [
+  ['#4FA6A0', '#26215C'],
+  ['#D97C86', '#3C3489'],
+  ['#3C3489', '#712B13'],
+];
 
 export default function HomeScreen({ navigation }) {
-  const campusAtualId = USUARIO_MOCK.campusId;
+  const { usuario } = useAuth();
+  const campusAtualId = usuario?.campus?.id;
 
   const [campuses, setCampuses] = useState([]);
   const [proximoCulto, setProximoCulto] = useState(null);
@@ -70,17 +89,25 @@ export default function HomeScreen({ navigation }) {
 
   const outrosCampuses = campuses.filter((c) => c.id !== campusAtualId);
 
-  // TODO BACKEND: EVENTOS e SERIES ainda são mock — filtram por campusId
-  // como string ('pechincha'). Precisam migrar pro app `conteudo` e passar
-  // a usar o id inteiro real assim que os serializers existirem.
-  const eventosDoCampus = EVENTOS.filter((e) => e.campusId === 'pechincha');
-  const serieDestaque = SERIES.find((s) => s.campusId === 'pechincha');
+  // TODO BACKEND: EVENTOS e SERIES ainda são mock — o app `conteudo` não
+  // migrou pra API ainda, então não dá pra filtrar pelo id real do campus
+  // (que agora vem do backend). Uso o nome do campus normalizado como
+  // ponte temporária — funciona hoje porque os slugs do mock seguem o
+  // mesmo padrão (ex: "Curicica" -> "curicica"). Assim que EVENTOS/SERIES
+  // virarem endpoints reais, isso some e filtra por campus.id de verdade.
+  const campusSlug = campus.nome
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/\s+/g, '-');
+  const eventosDoCampus = EVENTOS.filter((e) => e.campusId === campusSlug);
+  const serieDestaque = SERIES.find((s) => s.campusId === campusSlug);
 
   return (
     <View style={styles.root}>
-      {/* Degradê sutil de fundo — substitui o fundo chapado */}
+      {/* Degradê de fundo: topo fixo (identidade United), base na cor do campus */}
       <LinearGradient
-        colors={[COLORS.backgroundGlowTop, COLORS.background, COLORS.backgroundGlowBottom]}
+        colors={[COLORS.brandGlowTop, COLORS.background, accent.glow(0.14)]}
         style={StyleSheet.absoluteFill}
       />
 
@@ -110,7 +137,7 @@ export default function HomeScreen({ navigation }) {
               end={{ x: 1, y: 1 }}
               style={styles.heroBorder}
             >
-              <BlurView intensity={40} tint="dark" style={styles.heroInner}>
+              <GlassSurface intensity={40} style={styles.heroInner}>
                 <View style={styles.heroEyebrowRow}>
                   <Ionicons name="time-outline" size={13} color={accent.light} />
                   <Text style={[styles.heroEyebrow, { color: accent.light }]}>PRÓXIMO CULTO</Text>
@@ -121,101 +148,134 @@ export default function HomeScreen({ navigation }) {
                 <Text style={styles.heroSub}>Templo {campus.nome}</Text>
                 <TouchableOpacity
                   style={[styles.heroCta, { backgroundColor: accent.base }]}
-                  onPress={() => navigation.navigate('SobreCampus')}
+                  onPress={() => navigation.navigate('SobreCampus', { campusId: campus.id })}
                 >
                   <Text style={[styles.heroCtaText, { color: accent.textOnAccent }]}>
                     Ver detalhes
                   </Text>
                   <Ionicons name="arrow-forward" size={14} color={accent.textOnAccent} />
                 </TouchableOpacity>
-              </BlurView>
+              </GlassSurface>
             </LinearGradient>
           )}
 
-          {/* Próximos eventos */}
-          {eventosDoCampus.length > 0 && (
-            <View style={styles.section}>
-              <TouchableOpacity onPress={() => navigation.navigate('Eventos')}>
-                <View style={styles.sectionHeaderRow}>
-                  <Text style={styles.sectionTitle}>Próximos eventos</Text>
-                  <Ionicons name="chevron-forward" size={18} color={COLORS.textSecondary} />
-                </View>
-              </TouchableOpacity>
-              <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-                {eventosDoCampus.map((evento) => (
-                  <BlurView key={evento.id} intensity={25} tint="dark" style={styles.eventoCard}>
-                    <Text style={[styles.eventoData, { color: accent.light }]}>
-                      {formatarData(evento.data)}
-                    </Text>
-                    <Text style={styles.eventoTitulo}>{evento.titulo}</Text>
-                    <Text style={styles.eventoDescricao} numberOfLines={2}>
-                      {evento.descricao}
-                    </Text>
-                  </BlurView>
-                ))}
-              </ScrollView>
-            </View>
-          )}
-
-          {/* Em destaque — série */}
-          {serieDestaque && (
-            <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Em destaque</Text>
-              <TouchableOpacity onPress={() => navigation.getParent()?.navigate('Series')}>
-                <BlurView intensity={25} tint="dark" style={styles.destaqueCard}>
-                  <View style={[styles.destaqueCapa, { backgroundColor: accent.glow(0.18) }]}>
-                    <Ionicons name="play" size={26} color={accent.light} />
-                  </View>
-                  <View style={styles.destaqueInfo}>
-                    <Text style={[styles.destaqueMes, { color: accent.light }]}>
-                      {serieDestaque.mes}
-                    </Text>
-                    <Text style={styles.destaqueTitulo}>{serieDestaque.titulo}</Text>
-                    <Text style={styles.destaqueEpisodios}>
-                      {serieDestaque.episodios.length} episódios
-                    </Text>
-                  </View>
-                </BlurView>
-              </TouchableOpacity>
-            </View>
-          )}
-
-          {/* Acesso rápido */}
+          {/* Acesso rápido — quadrados pequenos, rolagem lateral */}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Acesso rápido</Text>
-            <View style={styles.gridContainer}>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.hScrollContent}
+            >
               <AcessoRapidoItem
                 icon="play-circle-outline"
                 label="Séries"
+                accent={accent}
                 onPress={() => navigation.getParent()?.navigate('Series')}
               />
               <AcessoRapidoItem
                 icon="newspaper-outline"
                 label="Notícias"
+                accent={accent}
                 onPress={() => navigation.navigate('Noticias')}
               />
               <AcessoRapidoItem
                 icon="megaphone-outline"
                 label="Eventos"
+                accent={accent}
                 onPress={() => navigation.navigate('Eventos')}
               />
               <AcessoRapidoItem
                 icon="book-outline"
                 label="Bíblia"
+                accent={accent}
                 onPress={() => navigation.getParent()?.navigate('Biblia')}
               />
               <AcessoRapidoItem
                 icon="location-outline"
                 label="Sobre o Campus"
-                onPress={() => navigation.navigate('SobreCampus')}
+                accent={accent}
+                onPress={() => navigation.navigate('SobreCampus', { campusId: campus.id })}
               />
               <AcessoRapidoItem
                 icon="information-circle-outline"
                 label="Sobre a United"
+                accent={accent}
                 onPress={() => navigation.navigate('SobreUnited')}
               />
-            </View>
+            </ScrollView>
           </View>
+
+          {/* Eventos — quadrados maiores (~2 por tela), rolagem lateral */}
+          {eventosDoCampus.length > 0 && (
+            <View style={styles.section}>
+              <TouchableOpacity onPress={() => navigation.navigate('Eventos')}>
+                <View style={styles.sectionHeaderRow}>
+                  <Text style={styles.sectionTitle}>Eventos em {campus.nome}</Text>
+                  <Ionicons name="chevron-forward" size={18} color={COLORS.textSecondary} />
+                </View>
+              </TouchableOpacity>
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.hScrollContent}
+              >
+                {eventosDoCampus.map((evento, index) => (
+                  <TouchableOpacity
+                    key={evento.id}
+                    style={styles.eventoCard}
+                    onPress={() => navigation.navigate('Eventos')}
+                  >
+                    <LinearGradient
+                      colors={PLACEHOLDER_GRADIENTS[index % PLACEHOLDER_GRADIENTS.length]}
+                      start={{ x: 0, y: 0 }}
+                      end={{ x: 1, y: 1 }}
+                      style={StyleSheet.absoluteFill}
+                    />
+                    <LinearGradient
+                      colors={['transparent', 'rgba(5,6,10,0.15)', 'rgba(5,6,10,0.9)']}
+                      style={StyleSheet.absoluteFill}
+                    />
+                    <View style={styles.eventoCardContent}>
+                      <Text style={[styles.eventoData, { color: accent.light }]}>
+                        {formatarData(evento.data)}
+                      </Text>
+                      <Text style={styles.eventoTitulo} numberOfLines={2}>
+                        {evento.titulo}
+                      </Text>
+                    </View>
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+            </View>
+          )}
+
+          {/* Série do mês — card grande com capa */}
+          {serieDestaque && (
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>Série do mês</Text>
+              <TouchableOpacity onPress={() => navigation.getParent()?.navigate('Series')}>
+                <View style={styles.serieCard}>
+                  <LinearGradient
+                    colors={['#3C3489', '#712B13']}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                    style={StyleSheet.absoluteFill}
+                  />
+                  <LinearGradient
+                    colors={['transparent', 'rgba(5,6,10,0.2)', 'rgba(5,6,10,0.95)']}
+                    style={StyleSheet.absoluteFill}
+                  />
+                  <View style={styles.serieContent}>
+                    <Text style={styles.serieTitulo}>{serieDestaque.titulo}</Text>
+                    <Text style={styles.serieEpisodios}>
+                      {serieDestaque.episodios.length} episódios · {campus.nome}
+                    </Text>
+                  </View>
+                </View>
+              </TouchableOpacity>
+            </View>
+          )}
 
           {/* Explorar outros campi */}
           {outrosCampuses.length > 0 && (
@@ -244,20 +304,22 @@ export default function HomeScreen({ navigation }) {
 function GlassIconButton({ children, onPress }) {
   return (
     <TouchableOpacity onPress={onPress}>
-      <BlurView intensity={30} tint="dark" style={styles.iconButton}>
+      <GlassSurface intensity={30} style={styles.iconButton}>
         {children}
-      </BlurView>
+      </GlassSurface>
     </TouchableOpacity>
   );
 }
 
-function AcessoRapidoItem({ icon, label, onPress }) {
+function AcessoRapidoItem({ icon, label, onPress, accent }) {
   return (
-    <TouchableOpacity onPress={onPress} style={styles.gridItemWrapper}>
-      <BlurView intensity={25} tint="dark" style={styles.gridItem}>
-        <Ionicons name={icon} size={24} color={COLORS.textPrimary} />
-        <Text style={styles.gridItemLabel}>{label}</Text>
-      </BlurView>
+    <TouchableOpacity onPress={onPress}>
+      <GlassSurface intensity={25} style={styles.quickItem}>
+        <Ionicons name={icon} size={20} color={accent.light} />
+        <Text style={styles.quickItemLabel} numberOfLines={2}>
+          {label}
+        </Text>
+      </GlassSurface>
     </TouchableOpacity>
   );
 }
@@ -270,7 +332,9 @@ function formatarData(dataStr) {
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: COLORS.background },
   container: { flex: 1 },
-  scrollContent: { paddingBottom: 24 },
+  // 66 (altura da tab bar) + ~30 (margem dela até o fundo) + folga —
+  // se a altura da tab bar mudar no RootNavigator, ajustar aqui também.
+  scrollContent: { paddingBottom: 130 },
   centered: { justifyContent: 'center', alignItems: 'center' },
   erroText: { color: COLORS.textSecondary, fontFamily: FONTS.bodyRegular, marginBottom: 12 },
   retryButton: {
@@ -285,7 +349,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
-    paddingHorizontal: 16,
+    paddingHorizontal: SCREEN_PADDING,
     paddingVertical: 12,
   },
   campusLabelRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 2 },
@@ -304,22 +368,16 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     justifyContent: 'center',
     alignItems: 'center',
-    overflow: 'hidden',
-    borderWidth: 1,
-    borderColor: COLORS.glassBorder,
-    backgroundColor: COLORS.glassFill,
   },
 
   heroBorder: {
-    marginHorizontal: 16,
+    marginHorizontal: SCREEN_PADDING,
     borderRadius: 24,
     padding: 1,
   },
   heroInner: {
     borderRadius: 23,
     padding: 20,
-    overflow: 'hidden',
-    backgroundColor: COLORS.glassFill,
   },
   heroEyebrowRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 10, gap: 6 },
   heroEyebrow: { fontSize: 11, fontFamily: FONTS.mono, letterSpacing: 1 },
@@ -346,89 +404,93 @@ const styles = StyleSheet.create({
   },
   heroCtaText: { fontFamily: FONTS.bodySemiBold, fontSize: 13 },
 
-  section: { marginTop: 24, paddingHorizontal: 16 },
+  section: { marginTop: 26 },
   sectionHeaderRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     marginBottom: 10,
+    paddingHorizontal: SCREEN_PADDING,
   },
   sectionTitle: {
     fontSize: 16,
     fontFamily: FONTS.displaySemiBold,
     color: COLORS.textPrimary,
     marginBottom: 10,
+    paddingHorizontal: SCREEN_PADDING,
   },
 
-  eventoCard: {
-    width: 190,
-    borderRadius: 18,
-    borderWidth: 1,
-    borderColor: COLORS.glassBorder,
-    padding: 14,
-    marginRight: 10,
-    overflow: 'hidden',
+  hScrollContent: {
+    paddingHorizontal: SCREEN_PADDING,
+    gap: 10,
   },
-  eventoData: { fontSize: 12, fontFamily: FONTS.mono },
-  eventoTitulo: {
-    fontSize: 14,
-    fontFamily: FONTS.bodySemiBold,
-    marginTop: 4,
-    color: COLORS.textPrimary,
+
+  // Acesso rápido — quadrados pequenos
+  quickItem: {
+    width: 74,
+    height: 74,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 6,
+    gap: 6,
   },
-  eventoDescricao: {
-    fontSize: 12,
-    fontFamily: FONTS.bodyRegular,
+  quickItemLabel: {
+    fontSize: 9.5,
+    fontFamily: FONTS.bodyMedium,
     color: COLORS.textSecondary,
-    marginTop: 4,
+    textAlign: 'center',
   },
 
-  destaqueCard: {
-    flexDirection: 'row',
+  // Eventos — quadrados maiores, foto/degradê de fundo + texto sobreposto
+  eventoCard: {
+    width: EVENTO_CARD_SIZE,
+    height: EVENTO_CARD_SIZE,
     borderRadius: 20,
     borderWidth: 1,
     borderColor: COLORS.glassBorder,
     overflow: 'hidden',
   },
-  destaqueCapa: {
-    width: 84,
-    height: 84,
-    justifyContent: 'center',
-    alignItems: 'center',
+  eventoCardContent: {
+    flex: 1,
+    justifyContent: 'flex-end',
+    padding: 14,
   },
-  destaqueInfo: { flex: 1, padding: 12, justifyContent: 'center' },
-  destaqueMes: { fontSize: 11, fontFamily: FONTS.mono },
-  destaqueTitulo: {
+  eventoData: { fontSize: 11, fontFamily: FONTS.mono, marginBottom: 3 },
+  eventoTitulo: {
     fontSize: 15,
     fontFamily: FONTS.displaySemiBold,
     color: COLORS.textPrimary,
-    marginTop: 2,
   },
-  destaqueEpisodios: {
+
+  // Série do mês — card grande, capa em degradê + texto sobreposto
+  serieCard: {
+    marginHorizontal: SCREEN_PADDING,
+    height: 170,
+    borderRadius: 24,
+    borderWidth: 1,
+    borderColor: COLORS.glassBorder,
+    overflow: 'hidden',
+  },
+  serieContent: {
+    position: 'absolute',
+    left: 16,
+    right: 16,
+    bottom: 16,
+  },
+  serieTitulo: {
+    fontSize: 19,
+    fontFamily: FONTS.displayBold,
+    color: COLORS.textPrimary,
+    marginBottom: 3,
+  },
+  serieEpisodios: {
     fontSize: 12,
     fontFamily: FONTS.bodyRegular,
     color: COLORS.textSecondary,
-    marginTop: 4,
   },
 
-  gridContainer: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' },
-  gridItemWrapper: { width: '48%', marginBottom: 12 },
-  gridItem: {
-    borderRadius: 18,
-    borderWidth: 1,
-    borderColor: COLORS.glassBorder,
-    paddingVertical: 20,
-    alignItems: 'center',
-    overflow: 'hidden',
-  },
-  gridItemLabel: {
-    marginTop: 8,
-    fontSize: 13,
-    fontFamily: FONTS.bodySemiBold,
-    color: COLORS.textPrimary,
-  },
-
-  exploreSection: { marginTop: 20, marginBottom: 24, paddingLeft: 16 },
+  exploreSection: { marginTop: 26, marginBottom: 24, paddingLeft: SCREEN_PADDING },
   exploreLabel: {
     fontSize: 12,
     fontFamily: FONTS.bodyRegular,

@@ -21,6 +21,11 @@ export const COLORS = {
   glassFill: 'rgba(255,255,255,0.055)',
   glassFillElevated: 'rgba(255,255,255,0.09)',
   glassBorder: 'rgba(255,255,255,0.10)',
+
+  // Glow lilás fixo — identidade "United", igual em todo campus. Usado
+  // só no TOPO do degradê de fundo da Home; a base do degradê é quem
+  // varia por campus (via getCampusAccent().glow()).
+  brandGlowTop: '#140e25',
 };
 
 // Nomes das famílias de fonte, conforme carregadas via @expo-google-fonts

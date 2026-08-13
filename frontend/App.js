@@ -3,6 +3,7 @@ import { View } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import * as SplashScreen from 'expo-splash-screen';
 import { useFonts } from 'expo-font';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { Sora_400Regular, Sora_600SemiBold, Sora_700Bold } from '@expo-google-fonts/sora';
 import { Inter_400Regular, Inter_500Medium, Inter_600SemiBold } from '@expo-google-fonts/inter';
 import { JetBrainsMono_500Medium } from '@expo-google-fonts/jetbrains-mono';
@@ -50,12 +51,17 @@ export default function App() {
     return null;
   }
 
+  // SafeAreaProvider precisa envolver TUDO, o mais no topo possível —
+  // é ele quem alimenta tanto o <SafeAreaView> (já usado nas telas) quanto
+  // o hook useSafeAreaInsets() (usado no RootNavigator pra bottom nav flutuante).
   return (
-    <AuthProvider>
-      <View style={{ flex: 1, backgroundColor: COLORS.background }} onLayout={onLayoutRootView}>
-        <StatusBar style="light" />
-        <AppContent />
-      </View>
-    </AuthProvider>
+    <SafeAreaProvider>
+      <AuthProvider>
+        <View style={{ flex: 1, backgroundColor: COLORS.background }} onLayout={onLayoutRootView}>
+          <StatusBar style="light" />
+          <AppContent />
+        </View>
+      </AuthProvider>
+    </SafeAreaProvider>
   );
 }
