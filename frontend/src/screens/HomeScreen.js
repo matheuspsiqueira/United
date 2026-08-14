@@ -18,7 +18,7 @@ import { getCampusAccent } from '../theme/campusAccent';
 import GlassSurface from '../components/GlassSurface';
 import { useAuth } from '../contexts/AuthContext';
 import { getCampuses, getProximoCulto } from '../services/campusApi';
-import { listarEventos } from '../services/eventosApi';
+import { listarEventos } from '../services/conteudoApi';
 import { SERIES } from '../data/mockData';
 import EventoDetalheModal from './modals/EventoDetalheModal';
 

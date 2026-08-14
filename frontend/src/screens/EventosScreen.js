@@ -9,7 +9,7 @@ import { COLORS, FONTS } from '../theme/colors';
 import { getCampusAccent } from '../theme/campusAccent';
 import GlassSurface from '../components/GlassSurface';
 import { useAuth } from '../contexts/AuthContext';
-import { listarEventos } from '../services/eventosApi';
+import { listarEventos } from '../services/conteudoApi';
 import EventoDetalheModal from './modals/EventoDetalheModal';
 
 export default function EventosScreen({ route, navigation }) {

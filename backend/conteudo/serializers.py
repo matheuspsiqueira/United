@@ -1,7 +1,7 @@
 from rest_framework import serializers
 
 from campus.models import Campus
-from .models import Evento
+from .models import Evento, Noticia, UnitedNews
 
 
 class CampusMiniSerializer(serializers.ModelSerializer):
@@ -29,4 +29,33 @@ class EventoSerializer(serializers.ModelSerializer):
             return None
         request = self.context.get('request')
         url = obj.capa.url
+        return request.build_absolute_uri(url) if request else url
+
+
+class NoticiaSerializer(serializers.ModelSerializer):
+    campus = CampusMiniSerializer(read_only=True)
+
+    class Meta:
+        model = Noticia
+        fields = [
+            'id', 'campus', 'titulo', 'conteudo', 'data', 'expira_em',
+        ]
+        # sem capa — Noticia é texto-only, conforme decidido
+
+
+class UnitedNewsSerializer(serializers.ModelSerializer):
+    campus = CampusMiniSerializer(read_only=True)
+    video = serializers.SerializerMethodField()
+
+    class Meta:
+        model = UnitedNews
+        fields = [
+            'id', 'campus', 'mes_referencia', 'video', 'atualizado_em',
+        ]
+
+    def get_video(self, obj):
+        if not obj.video:
+            return None
+        request = self.context.get('request')
+        url = obj.video.url
         return request.build_absolute_uri(url) if request else url
