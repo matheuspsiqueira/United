@@ -4,10 +4,9 @@ from .models import Evento, Noticia, UnitedNews
 
 @admin.register(Evento)
 class EventoAdmin(admin.ModelAdmin):
-    list_display = ('titulo', 'campus', 'data')
+    list_display = ('titulo', 'campus', 'data', 'horario', 'valor')
     list_filter = ('campus',)
-    search_fields = ('titulo',)
-    date_hierarchy = 'data'
+    ordering = ('data', 'horario')
 
 
 @admin.register(Noticia)

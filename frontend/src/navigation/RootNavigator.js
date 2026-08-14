@@ -58,12 +58,20 @@ export default function RootNavigator() {
         // O fundo de vidro entra por baixo do conteúdo da tab bar —
         // precisa de tabBarStyle com backgroundColor transparent pra aparecer.
         tabBarBackground: () => (
-          <BlurView
-            intensity={35}
-            tint="dark"
-            style={StyleSheet.absoluteFill}
-            experimentalBlurMethod={Platform.OS === 'android' ? 'dimezisBlurView' : undefined}
-          />
+          <View style={StyleSheet.absoluteFill}>
+            <BlurView
+              intensity={35}
+              tint="dark"
+              style={StyleSheet.absoluteFill}
+              experimentalBlurMethod={Platform.OS === 'android' ? 'dimezisBlurView' : undefined}
+            />
+            <View
+              style={[
+                StyleSheet.absoluteFill,
+                { backgroundColor: COLORS.background, opacity: 0.30 },
+              ]}
+            />
+          </View>
         ),
         tabBarStyle: [styles.tabBar, { bottom: insets.bottom + 14 }],
         tabBarItemStyle: styles.tabItem,

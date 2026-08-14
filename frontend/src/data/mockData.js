@@ -133,14 +133,33 @@ export const EVENTOS = [
     campusId: 'pechincha',
     titulo: 'Kings',
     data: '2026-08-02',
+    horario: '19h00',
     descricao: 'Conferência para os homens de fé.',
+    capa: null, // placeholder — depois vira URL de imagem
+    valor: 45,
+    linkIngresso: 'https://exemplo.com/ingressos/kings',
   },
   {
     id: 'ev2',
     campusId: 'pechincha',
     titulo: 'Batismo nas Águas',
     data: '2026-08-09',
+    horario: '10h00',
     descricao: 'Inscrições abertas na secretaria do campus.',
+    capa: null,
+    valor: 0,
+    linkIngresso: null,
+  },
+  {
+    id: 'ev3',
+    campusId: 'curicica',
+    titulo: 'Encontro de Casais',
+    data: '2026-08-15',
+    horario: '19h30',
+    descricao: 'Uma noite especial para fortalecer o casamento à luz da Palavra.',
+    capa: null,
+    valor: 30,
+    linkIngresso: 'https://exemplo.com/ingressos/encontro-casais',
   },
 ];
 

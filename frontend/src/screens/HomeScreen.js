@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   Dimensions,
+  Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -17,18 +18,16 @@ import { getCampusAccent } from '../theme/campusAccent';
 import GlassSurface from '../components/GlassSurface';
 import { useAuth } from '../contexts/AuthContext';
 import { getCampuses, getProximoCulto } from '../services/campusApi';
-import { EVENTOS, SERIES } from '../data/mockData';
+import { listarEventos } from '../services/eventosApi';
+import { SERIES } from '../data/mockData';
+import EventoDetalheModal from './modals/EventoDetalheModal';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const SCREEN_PADDING = 16;
 const EVENTO_GAP = 12;
-// Largura calculada pra caber ~2 cards por tela (com uma leve folga do
-// terceiro aparecendo na borda, indicando que rola) — se SCREEN_PADDING
-// mudar no resto da tela, ajustar aqui também.
 const EVENTO_CARD_SIZE = (SCREEN_WIDTH - SCREEN_PADDING * 2 - EVENTO_GAP) / 2;
 
-// Degradês só decorativos pros cards que ainda não têm foto de capa real
-// (Eventos e Série do mês ainda são mock, sem campo de imagem migrado).
+// Degradê decorativo só pra eventos SEM foto de capa cadastrada.
 const PLACEHOLDER_GRADIENTS = [
   ['#4FA6A0', '#26215C'],
   ['#D97C86', '#3C3489'],
@@ -36,25 +35,28 @@ const PLACEHOLDER_GRADIENTS = [
 ];
 
 export default function HomeScreen({ navigation }) {
-  const { usuario } = useAuth();
+  const { usuario, token } = useAuth();
   const campusAtualId = usuario?.campus?.id;
 
   const [campuses, setCampuses] = useState([]);
   const [proximoCulto, setProximoCulto] = useState(null);
+  const [eventos, setEventos] = useState([]);
+  const [eventoSelecionado, setEventoSelecionado] = useState(null);
   const [loading, setLoading] = useState(true);
   const [erro, setErro] = useState(null);
 
   const carregar = useCallback(() => {
     setLoading(true);
     setErro(null);
-    Promise.all([getCampuses(), getProximoCulto(campusAtualId)])
-      .then(([listaCampuses, culto]) => {
+    Promise.all([getCampuses(), getProximoCulto(campusAtualId), listarEventos(token)])
+      .then(([listaCampuses, culto, listaEventos]) => {
         setCampuses(listaCampuses);
         setProximoCulto(culto);
+        setEventos(listaEventos);
       })
       .catch((e) => setErro(e.message))
       .finally(() => setLoading(false));
-  }, [campusAtualId]);
+  }, [campusAtualId, token]);
 
   useEffect(() => {
     carregar();
@@ -80,32 +82,25 @@ export default function HomeScreen({ navigation }) {
   }
 
   const campus = campuses.find((c) => c.id === campusAtualId);
-  if (!campus) return null; // campus do usuário ainda não está na lista retornada
+  if (!campus) return null;
 
-  // Accent derivado da corTema do campus do usuário — só usado nos
-  // elementos que representam ESTE campus (hero, tag, CTA, eventos/série
-  // dele). Não propagar pra conteúdo de outros campi.
   const accent = getCampusAccent(campus.corTema);
-
   const outrosCampuses = campuses.filter((c) => c.id !== campusAtualId);
 
-  // TODO BACKEND: EVENTOS e SERIES ainda são mock — o app `conteudo` não
-  // migrou pra API ainda, então não dá pra filtrar pelo id real do campus
-  // (que agora vem do backend). Uso o nome do campus normalizado como
-  // ponte temporária — funciona hoje porque os slugs do mock seguem o
-  // mesmo padrão (ex: "Curicica" -> "curicica"). Assim que EVENTOS/SERIES
-  // virarem endpoints reais, isso some e filtra por campus.id de verdade.
+  // Eventos reais, só do campus do usuário logado.
+  const eventosDoCampus = eventos.filter((e) => e.campus.id === campusAtualId);
+
+  // TODO BACKEND: SERIES ainda é mock — mesma ponte temporária por slug
+  // usada antes; some quando o app `conteudo` migrar Séries pra API.
   const campusSlug = campus.nome
     .toLowerCase()
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '')
     .replace(/\s+/g, '-');
-  const eventosDoCampus = EVENTOS.filter((e) => e.campusId === campusSlug);
   const serieDestaque = SERIES.find((s) => s.campusId === campusSlug);
 
   return (
     <View style={styles.root}>
-      {/* Degradê de fundo: topo fixo (identidade United), base na cor do campus */}
       <LinearGradient
         colors={[COLORS.brandGlowTop, COLORS.background, accent.glow(0.14)]}
         style={StyleSheet.absoluteFill}
@@ -206,32 +201,33 @@ export default function HomeScreen({ navigation }) {
             </ScrollView>
           </View>
 
-          {/* Eventos — quadrados maiores (~2 por tela), rolagem lateral */}
           {eventosDoCampus.length > 0 && (
             <View style={styles.section}>
-              <TouchableOpacity onPress={() => navigation.navigate('Eventos')}>
-                <View style={styles.sectionHeaderRow}>
-                  <Text style={styles.sectionTitle}>Eventos em {campus.nome}</Text>
-                  <Ionicons name="chevron-forward" size={18} color={COLORS.textSecondary} />
-                </View>
-              </TouchableOpacity>
+              <Text style={styles.sectionTitle}>Eventos em {campus.nome}</Text>
               <ScrollView
                 horizontal
                 showsHorizontalScrollIndicator={false}
                 contentContainerStyle={styles.hScrollContent}
               >
-                {eventosDoCampus.map((evento, index) => (
+                {eventosDoCampus.slice(0, 3).map((evento, index) => (
                   <TouchableOpacity
                     key={evento.id}
                     style={styles.eventoCard}
-                    onPress={() => navigation.navigate('Eventos')}
+                    onPress={() => setEventoSelecionado(evento)}
                   >
-                    <LinearGradient
-                      colors={PLACEHOLDER_GRADIENTS[index % PLACEHOLDER_GRADIENTS.length]}
-                      start={{ x: 0, y: 0 }}
-                      end={{ x: 1, y: 1 }}
-                      style={StyleSheet.absoluteFill}
-                    />
+                    {evento.capa ? (
+                      <Image
+                        source={{ uri: evento.capa, headers: { 'ngrok-skip-browser-warning': 'true' } }}
+                        style={StyleSheet.absoluteFill}
+                      />
+                    ) : (
+                      <LinearGradient
+                        colors={PLACEHOLDER_GRADIENTS[index % PLACEHOLDER_GRADIENTS.length]}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 1, y: 1 }}
+                        style={StyleSheet.absoluteFill}
+                      />
+                    )}
                     <LinearGradient
                       colors={['transparent', 'rgba(5,6,10,0.15)', 'rgba(5,6,10,0.9)']}
                       style={StyleSheet.absoluteFill}
@@ -246,9 +242,22 @@ export default function HomeScreen({ navigation }) {
                     </View>
                   </TouchableOpacity>
                 ))}
+
+                {eventosDoCampus.length > 0 && (
+                  <TouchableOpacity
+                    style={styles.verMaisItem}
+                    onPress={() => navigation.navigate('Eventos')}
+                  >
+                    <View style={[styles.verMaisIcon, { backgroundColor: accent.glow(0.2) }]}>
+                      <Ionicons name="arrow-forward" size={16} color={accent.light} />
+                    </View>
+                    <Text style={styles.verMaisText}>Ver mais</Text>
+                  </TouchableOpacity>
+                )}
               </ScrollView>
             </View>
           )}
+          
 
           {/* Série do mês — card grande com capa */}
           {serieDestaque && (
@@ -297,6 +306,12 @@ export default function HomeScreen({ navigation }) {
           )}
         </ScrollView>
       </SafeAreaView>
+
+      <EventoDetalheModal
+        visible={!!eventoSelecionado}
+        evento={eventoSelecionado}
+        onClose={() => setEventoSelecionado(null)}
+      />
     </View>
   );
 }
@@ -461,6 +476,25 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontFamily: FONTS.displaySemiBold,
     color: COLORS.textPrimary,
+  },
+  verMaisItem: {
+    width: 74, // mesma largura do quickItem, só pra não ficar solto/desalinhado
+    height: EVENTO_CARD_SIZE,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+  },
+  verMaisIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  verMaisText: {
+    fontSize: 12,
+    fontFamily: FONTS.bodyMedium,
+    color: COLORS.textSecondary,
   },
 
   // Série do mês — card grande, capa em degradê + texto sobreposto

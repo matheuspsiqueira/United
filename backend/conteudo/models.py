@@ -11,7 +11,13 @@ class Evento(models.Model):
     titulo = models.CharField(max_length=150)
     descricao = models.TextField()
     data = models.DateField()
+    horario = models.TimeField(blank=True, null=True)
+    valor = models.DecimalField(max_digits=8, decimal_places=2, blank=True, null=True)
+    link_ingresso = models.URLField(blank=True, null=True)
     capa = models.ImageField(upload_to='eventos/', blank=True, null=True)
+
+    class Meta:
+        ordering = ['data', 'horario']
 
     def __str__(self):
         return self.titulo
