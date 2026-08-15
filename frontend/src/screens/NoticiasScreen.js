@@ -17,8 +17,31 @@ import GlassSurface from '../components/GlassSurface';
 import { useAuth } from '../contexts/AuthContext';
 import { listarNoticias, listarUnitedNews } from '../services/conteudoApi';
 
-//import NoticiaDetalheModal from './modals/NoticiaDetalhe';
-//import UnitedNewsPlayerModal from './modals/UnitedNewsPlayer';
+import NoticiaDetalheModal from './modals/NoticiaDetalhe';
+import UnitedNewsPlayerModal from './modals/UnitedNewsPlayer';
+
+function UnitedNewsCard({ unitedNews, accent, onPress }) {
+  return (
+    <TouchableOpacity activeOpacity={0.85} onPress={onPress}>
+      <GlassSurface style={[styles.unitedCard, { borderColor: accent.glow(0.5) }]} scrimOpacity={0.35}>
+        {unitedNews.capa ? (
+          <Image source={{ uri: unitedNews.capa }} style={styles.unitedThumb} />
+        ) : (
+          <View style={[styles.unitedThumb, styles.unitedThumbFallback]} />
+        )}
+        <View style={styles.unitedOverlay}>
+          <View style={[styles.playButton, { backgroundColor: accent.base }]}>
+            <Text style={[styles.playIcon, { color: accent.textOnAccent }]}>▶</Text>
+          </View>
+        </View>
+        <View style={styles.unitedFooter}>
+          <Text style={[styles.unitedTag, { color: accent.light }]}>UNITED NEWS</Text>
+          <Text style={styles.unitedMes}>{unitedNews.mes_referencia}</Text>
+        </View>
+      </GlassSurface>
+    </TouchableOpacity>
+  );
+}
 
 export default function NoticiasScreen({ route, navigation }) {
   const insets = useSafeAreaInsets();
@@ -96,24 +119,11 @@ export default function NoticiasScreen({ route, navigation }) {
         ) : (
           <>
             {unitedNews && (
-              <TouchableOpacity activeOpacity={0.85} onPress={() => setPlayerAberto(true)}>
-                <GlassSurface style={[styles.unitedCard, { borderColor: accent.glow(0.5) }]} scrimOpacity={0.35}>
-                  {unitedNews.thumbnail ? (
-                    <Image source={{ uri: unitedNews.thumbnail }} style={styles.unitedThumb} />
-                  ) : (
-                    <View style={[styles.unitedThumb, styles.unitedThumbFallback]} />
-                  )}
-                  <View style={styles.unitedOverlay}>
-                    <View style={[styles.playButton, { backgroundColor: accent.base }]}>
-                      <Text style={[styles.playIcon, { color: accent.textOnAccent }]}>▶</Text>
-                    </View>
-                  </View>
-                  <View style={styles.unitedFooter}>
-                    <Text style={[styles.unitedTag, { color: accent.light }]}>UNITED NEWS</Text>
-                    <Text style={styles.unitedMes}>{unitedNews.mes_referencia}</Text>
-                  </View>
-                </GlassSurface>
-              </TouchableOpacity>
+              <UnitedNewsCard
+                unitedNews={unitedNews}
+                accent={accent}
+                onPress={() => setPlayerAberto(true)}
+              />
             )}
 
             {noticias.length === 0 ? (
@@ -142,7 +152,6 @@ export default function NoticiasScreen({ route, navigation }) {
       <NoticiaDetalheModal
         visible={!!noticiaSelecionada}
         noticia={noticiaSelecionada}
-        accent={accent}
         onClose={() => setNoticiaSelecionada(null)}
       />
 
@@ -174,7 +183,7 @@ const styles = StyleSheet.create({
 
   unitedCard: { marginBottom: 20, overflow: 'hidden' },
   unitedThumb: { width: '100%', height: 180 },
-  unitedThumbFallback: { backgroundColor: COLORS.surfaceElevated },
+  unitedThumbFallback: { backgroundColor: COLORS.surfaceElevated, alignItems: 'center', justifyContent: 'center' },
   unitedOverlay: { ...StyleSheet.absoluteFillObject, alignItems: 'center', justifyContent: 'center' },
   playButton: { width: 52, height: 52, borderRadius: 26, alignItems: 'center', justifyContent: 'center' },
   playIcon: { fontSize: 18, marginLeft: 3 },

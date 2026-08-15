@@ -54,6 +54,7 @@ class UnitedNews(models.Model):
     campus = models.OneToOneField(Campus, related_name='united_news', on_delete=models.CASCADE)
     mes_referencia = models.CharField(max_length=20)
     video = models.FileField(upload_to='united_news/')
+    capa = models.ImageField(upload_to='united_news/capas/', blank=True, null=True)
     atualizado_em = models.DateTimeField(auto_now=True)
 
     def __str__(self):

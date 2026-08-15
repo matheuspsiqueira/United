@@ -32,7 +32,7 @@ class NoticiaListView(generics.ListAPIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
-        queryset = Noticia.objects.select_related('campus').ativas()
+        queryset = Noticia.objects.ativas().select_related('campus')
         campus_id = self.request.query_params.get('campus')
         if campus_id:
             queryset = queryset.filter(campus_id=campus_id)

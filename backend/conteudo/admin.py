@@ -21,24 +21,19 @@ class NoticiaAdmin(admin.ModelAdmin):
 
 @admin.register(UnitedNews)
 class UnitedNewsAdmin(admin.ModelAdmin):
-    list_display = ('campus', 'mes_referencia', 'atualizado_em', 'preview_video')
-    readonly_fields = ('atualizado_em', 'preview_video')
+    list_display = ('campus', 'mes_referencia', 'atualizado_em', 'preview_capa')
+    readonly_fields = ('atualizado_em', 'preview_capa')
 
-    def preview_video(self, obj):
-        if not obj.video:
+    def preview_capa(self, obj):
+        if not obj.capa:
             return '—'
         return format_html(
-            '<video src="{}" controls style="max-width:320px;max-height:200px;"></video>',
-            obj.video.url,
+            '<img src="{}" style="max-width:200px;max-height:120px;border-radius:8px;" />',
+            obj.capa.url,
         )
-    preview_video.short_description = 'Prévia'
+    preview_capa.short_description = 'Capa'
 
     def has_add_permission(self, request):
-        """
-        UnitedNews é OneToOne por campus — se todo campus já tem um registro,
-        não faz sentido permitir 'Adicionar'. O responsável deve editar o
-        existente pra substituir o vídeo do mês.
-        """
         from campus.models import Campus
         campi_sem_news = Campus.objects.exclude(
             id__in=UnitedNews.objects.values_list('campus_id', flat=True)

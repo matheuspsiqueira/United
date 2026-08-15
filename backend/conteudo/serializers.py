@@ -46,11 +46,12 @@ class NoticiaSerializer(serializers.ModelSerializer):
 class UnitedNewsSerializer(serializers.ModelSerializer):
     campus = CampusMiniSerializer(read_only=True)
     video = serializers.SerializerMethodField()
+    capa = serializers.SerializerMethodField()
 
     class Meta:
         model = UnitedNews
         fields = [
-            'id', 'campus', 'mes_referencia', 'video', 'atualizado_em',
+            'id', 'campus', 'mes_referencia', 'video', 'capa', 'atualizado_em',
         ]
 
     def get_video(self, obj):
@@ -58,4 +59,11 @@ class UnitedNewsSerializer(serializers.ModelSerializer):
             return None
         request = self.context.get('request')
         url = obj.video.url
+        return request.build_absolute_uri(url) if request else url
+
+    def get_capa(self, obj):
+        if not obj.capa:
+            return None
+        request = self.context.get('request')
+        url = obj.capa.url
         return request.build_absolute_uri(url) if request else url
