@@ -1,17 +1,13 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 
 import { COLORS, FONTS } from '../theme/colors';
 import { useAuth } from '../contexts/AuthContext';
-import EditarDadosModal from './modals/EditarDadosPessoais';
-import VersiculosFavoritosModal from './modals/VersiculosFavoritos';
 
-export default function PerfilScreen() {
+export default function PerfilScreen({ navigation }) {
   const { usuario, logout } = useAuth();
-  const [modalDadosVisivel, setModalDadosVisivel] = useState(false);
-  const [modalVersiculosVisivel, setModalVersiculosVisivel] = useState(false);
 
   if (!usuario) return null;
 
@@ -40,8 +36,16 @@ export default function PerfilScreen() {
       </View>
 
       <View style={styles.menu}>
-        <MenuItem icon="bookmark-outline" label="Versículos favoritos" onPress={() => setModalVersiculosVisivel(true)} />
-        <MenuItem icon="create-outline" label="Editar dados pessoais" onPress={() => setModalDadosVisivel(true)} />
+        <MenuItem
+          icon="bookmark-outline"
+          label="Versículos favoritos"
+          onPress={() => navigation.getParent()?.navigate('VersiculosFavoritos')}
+        />
+        <MenuItem
+          icon="create-outline"
+          label="Editar dados pessoais"
+          onPress={() => navigation.getParent()?.navigate('EditarDadosPessoais')}
+        />
 
         {usuario.role !== 'voluntario' && (
           <View style={styles.voluntarioNote}>
@@ -54,9 +58,6 @@ export default function PerfilScreen() {
 
         <MenuItem icon="log-out-outline" label="Sair" danger onPress={logout} />
       </View>
-
-      <EditarDadosModal visible={modalDadosVisivel} onClose={() => setModalDadosVisivel(false)} />
-      <VersiculosFavoritosModal visible={modalVersiculosVisivel} onClose={() => setModalVersiculosVisivel(false)} />
     </SafeAreaView>
   );
 }

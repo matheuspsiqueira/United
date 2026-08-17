@@ -10,12 +10,10 @@ import { getCampusAccent } from '../theme/campusAccent';
 import GlassSurface from '../components/GlassSurface';
 import { useAuth } from '../contexts/AuthContext';
 import { listarEventos } from '../services/conteudoApi';
-import EventoDetalheModal from './modals/EventoDetalheModal';
 
 export default function EventosScreen({ route, navigation }) {
   const { token } = useAuth();
   const campusIdFiltro = route?.params?.campusId ?? null;
-  const [eventoSelecionado, setEventoSelecionado] = useState(null);
 
   const [eventos, setEventos] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -109,7 +107,10 @@ export default function EventosScreen({ route, navigation }) {
         renderItem={({ item, section }) => {
           const accent = getCampusAccent(section.campus.corTema);
           return (
-            <TouchableOpacity activeOpacity={0.85} onPress={() => setEventoSelecionado(item)}>
+            <TouchableOpacity
+              activeOpacity={0.85}
+              onPress={() => navigation.getParent()?.getParent()?.navigate('EventoDetalhe', { evento: item })}
+            >
               <GlassSurface style={styles.card} scrimOpacity={0.4}>
                 {item.capa ? (
                   <Image
@@ -130,12 +131,6 @@ export default function EventosScreen({ route, navigation }) {
             </TouchableOpacity>
           );
         }}
-      />
-
-      <EventoDetalheModal
-        visible={!!eventoSelecionado}
-        evento={eventoSelecionado}
-        onClose={() => setEventoSelecionado(null)}
       />
     </SafeAreaView>
   );

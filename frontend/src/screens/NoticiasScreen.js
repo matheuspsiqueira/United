@@ -17,9 +17,6 @@ import GlassSurface from '../components/GlassSurface';
 import { useAuth } from '../contexts/AuthContext';
 import { listarNoticias, listarUnitedNews } from '../services/conteudoApi';
 
-import NoticiaDetalheModal from './modals/NoticiaDetalhe';
-import UnitedNewsPlayerModal from './modals/UnitedNewsPlayer';
-
 function UnitedNewsCard({ unitedNews, accent, onPress }) {
   return (
     <TouchableOpacity activeOpacity={0.85} onPress={onPress}>
@@ -59,8 +56,6 @@ export default function NoticiasScreen({ route, navigation }) {
   const [unitedNews, setUnitedNews] = useState(null);
   const [loading, setLoading] = useState(true);
   const [erro, setErro] = useState(null);
-  const [noticiaSelecionada, setNoticiaSelecionada] = useState(null);
-  const [playerAberto, setPlayerAberto] = useState(false);
 
   const carregar = useCallback(async () => {
     if (!campusId) return;
@@ -122,7 +117,7 @@ export default function NoticiasScreen({ route, navigation }) {
               <UnitedNewsCard
                 unitedNews={unitedNews}
                 accent={accent}
-                onPress={() => setPlayerAberto(true)}
+                onPress={() => navigation.getParent()?.getParent()?.navigate('UnitedNewsPlayer', { unitedNews })}
               />
             )}
 
@@ -133,7 +128,7 @@ export default function NoticiasScreen({ route, navigation }) {
                 <TouchableOpacity
                   key={noticia.id}
                   activeOpacity={0.85}
-                  onPress={() => setNoticiaSelecionada(noticia)}
+                  onPress={() => navigation.getParent()?.getParent()?.navigate('NoticiaDetalhe', { noticia })}
                 >
                   <GlassSurface style={styles.card}>
                     <Text style={styles.data}>{noticia.data}</Text>
@@ -148,18 +143,6 @@ export default function NoticiasScreen({ route, navigation }) {
           </>
         )}
       </ScrollView>
-
-      <NoticiaDetalheModal
-        visible={!!noticiaSelecionada}
-        noticia={noticiaSelecionada}
-        onClose={() => setNoticiaSelecionada(null)}
-      />
-
-      <UnitedNewsPlayerModal
-        visible={playerAberto}
-        unitedNews={unitedNews}
-        onClose={() => setPlayerAberto(false)}
-      />
     </View>
   );
 }

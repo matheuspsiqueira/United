@@ -20,23 +20,18 @@ import { useAuth } from '../contexts/AuthContext';
 import { getCampuses, getProximoCulto } from '../services/campusApi';
 import { listarEventos } from '../services/conteudoApi';
 import { listarSeries } from '../services/seriesApi';
-import EventoDetalheModal from './modals/EventoDetalheModal';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const SCREEN_PADDING = 16;
 const EVENTO_GAP = 12;
 const EVENTO_CARD_SIZE = (SCREEN_WIDTH - SCREEN_PADDING * 2 - EVENTO_GAP) / 2;
 
-// Degradê decorativo só pra eventos SEM foto de capa cadastrada.
 const PLACEHOLDER_GRADIENTS = [
   ['#4FA6A0', '#26215C'],
   ['#D97C86', '#3C3489'],
   ['#3C3489', '#712B13'],
 ];
 
-// Série do mês = série do campus do usuário cuja data_lancamento cai no
-// mês/ano atual. Se o campus não lançou nada nesse mês, não tem destaque
-// (a seção some, igual eventosDoCampus.length > 0 já faz).
 function getSerieDoMes(series, campusId) {
   const agora = new Date();
   return (
@@ -56,7 +51,6 @@ export default function HomeScreen({ navigation }) {
   const [proximoCulto, setProximoCulto] = useState(null);
   const [eventos, setEventos] = useState([]);
   const [series, setSeries] = useState([]);
-  const [eventoSelecionado, setEventoSelecionado] = useState(null);
   const [loading, setLoading] = useState(true);
   const [erro, setErro] = useState(null);
 
@@ -107,10 +101,7 @@ export default function HomeScreen({ navigation }) {
 
   const accent = getCampusAccent(campus.corTema);
   const outrosCampuses = campuses.filter((c) => c.id !== campusAtualId);
-
-  // Eventos reais, só do campus do usuário logado.
   const eventosDoCampus = eventos.filter((e) => e.campus.id === campusAtualId);
-
   const serieDestaque = getSerieDoMes(series, campusAtualId);
 
   return (
@@ -122,7 +113,6 @@ export default function HomeScreen({ navigation }) {
 
       <SafeAreaView style={styles.container} edges={['top']}>
         <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
-          {/* Header */}
           <View style={styles.header}>
             <View>
               <View style={styles.campusLabelRow}>
@@ -138,7 +128,6 @@ export default function HomeScreen({ navigation }) {
             </View>
           </View>
 
-          {/* Hero — Próximo culto */}
           {proximoCulto && (
             <LinearGradient
               colors={[accent.glow(0.75), accent.glow(0.2), 'rgba(255,255,255,0.05)']}
@@ -168,7 +157,6 @@ export default function HomeScreen({ navigation }) {
             </LinearGradient>
           )}
 
-          {/* Acesso rápido — quadrados pequenos, rolagem lateral */}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Acesso rápido</Text>
             <ScrollView
@@ -227,7 +215,7 @@ export default function HomeScreen({ navigation }) {
                   <TouchableOpacity
                     key={evento.id}
                     style={styles.eventoCard}
-                    onPress={() => setEventoSelecionado(evento)}
+                    onPress={() => navigation.getParent()?.getParent()?.navigate('EventoDetalhe', { evento })}
                   >
                     {evento.capa ? (
                       <Image
@@ -272,7 +260,6 @@ export default function HomeScreen({ navigation }) {
             </View>
           )}
 
-          {/* Série do mês — card grande com capa real, dados vindos da API */}
           {serieDestaque && (
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Série do mês</Text>
@@ -304,7 +291,6 @@ export default function HomeScreen({ navigation }) {
             </View>
           )}
 
-          {/* Explorar outros campi */}
           {outrosCampuses.length > 0 && (
             <View style={styles.exploreSection}>
               <Text style={styles.exploreLabel}>Explorar outros campi</Text>
@@ -324,12 +310,6 @@ export default function HomeScreen({ navigation }) {
           )}
         </ScrollView>
       </SafeAreaView>
-
-      <EventoDetalheModal
-        visible={!!eventoSelecionado}
-        evento={eventoSelecionado}
-        onClose={() => setEventoSelecionado(null)}
-      />
     </View>
   );
 }
@@ -365,8 +345,6 @@ function formatarData(dataStr) {
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: COLORS.background },
   container: { flex: 1 },
-  // 66 (altura da tab bar) + ~30 (margem dela até o fundo) + folga —
-  // se a altura da tab bar mudar no RootNavigator, ajustar aqui também.
   scrollContent: { paddingBottom: 130 },
   centered: { justifyContent: 'center', alignItems: 'center' },
   erroText: { color: COLORS.textSecondary, fontFamily: FONTS.bodyRegular, marginBottom: 12 },
@@ -377,7 +355,6 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   retryText: { color: COLORS.textPrimary, fontFamily: FONTS.bodySemiBold },
-
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -402,7 +379,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-
   heroBorder: {
     marginHorizontal: SCREEN_PADDING,
     borderRadius: 24,
@@ -436,7 +412,6 @@ const styles = StyleSheet.create({
     borderRadius: 14,
   },
   heroCtaText: { fontFamily: FONTS.bodySemiBold, fontSize: 13 },
-
   section: { marginTop: 26 },
   sectionHeaderRow: {
     flexDirection: 'row',
@@ -452,13 +427,10 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     paddingHorizontal: SCREEN_PADDING,
   },
-
   hScrollContent: {
     paddingHorizontal: SCREEN_PADDING,
     gap: 10,
   },
-
-  // Acesso rápido — quadrados pequenos
   quickItem: {
     width: 74,
     height: 74,
@@ -474,8 +446,6 @@ const styles = StyleSheet.create({
     color: COLORS.textSecondary,
     textAlign: 'center',
   },
-
-  // Eventos — quadrados maiores, foto/degradê de fundo + texto sobreposto
   eventoCard: {
     width: EVENTO_CARD_SIZE,
     height: EVENTO_CARD_SIZE,
@@ -496,7 +466,7 @@ const styles = StyleSheet.create({
     color: COLORS.textPrimary,
   },
   verMaisItem: {
-    width: 74, // mesma largura do quickItem, só pra não ficar solto/desalinhado
+    width: 74,
     height: EVENTO_CARD_SIZE,
     alignItems: 'center',
     justifyContent: 'center',
@@ -514,8 +484,6 @@ const styles = StyleSheet.create({
     fontFamily: FONTS.bodyMedium,
     color: COLORS.textSecondary,
   },
-
-  // Série do mês — card grande, capa em degradê + texto sobreposto
   serieCard: {
     marginHorizontal: SCREEN_PADDING,
     height: 170,
@@ -541,7 +509,6 @@ const styles = StyleSheet.create({
     fontFamily: FONTS.bodyRegular,
     color: COLORS.textSecondary,
   },
-
   exploreSection: { marginTop: 26, marginBottom: 24, paddingLeft: SCREEN_PADDING },
   exploreLabel: {
     fontSize: 12,

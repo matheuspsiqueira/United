@@ -3,14 +3,14 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
 import RootNavigator from './RootNavigator';
 import SerieDetalheScreen from '../screens/modals/SerieDetalheScreen';
+import EventoDetalheScreen from '../screens/modals/EventoDetalheScreen';
+import NoticiaDetalheScreen from '../screens/modals/NoticiaDetalheScreen';
+import VersiculosFavoritosScreen from '../screens/modals/VersiculosFavoritosScreen';
+import EditarDadosPessoaisScreen from '../screens/modals/EditarDadosPessoaisScreen';
+import UnitedNewsPlayerScreen from '../screens/modals/UnitedNewsPlayerScreen';
 
 const Stack = createNativeStackNavigator();
 
-// Fica ACIMA das tabs — aqui entram os modais de TELA CHEIA (cobrem a tab
-// bar inteira, ex: detalhe de série). Modais que só cobrem o conteúdo de
-// uma tab específica continuariam dentro do *StackNavigator daquela tab.
-// Existe só pra isso: nenhuma outra lógica de auth mora aqui, isso
-// continua sendo resolvido no AppNavigator.
 export default function AuthenticatedNavigator() {
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
@@ -18,6 +18,31 @@ export default function AuthenticatedNavigator() {
       <Stack.Screen
         name="SerieDetalhe"
         component={SerieDetalheScreen}
+        options={{ presentation: 'modal', animation: 'slide_from_bottom' }}
+      />
+      <Stack.Screen
+        name="EventoDetalhe"
+        component={EventoDetalheScreen}
+        options={{ presentation: 'modal', animation: 'slide_from_bottom' }}
+      />
+      <Stack.Screen
+        name="NoticiaDetalhe"
+        component={NoticiaDetalheScreen}
+        options={{ presentation: 'modal', animation: 'slide_from_bottom' }}
+      />
+      <Stack.Screen
+        name="VersiculosFavoritos"
+        component={VersiculosFavoritosScreen}
+        options={{ presentation: 'modal', animation: 'slide_from_bottom' }}
+      />
+      <Stack.Screen
+        name="EditarDadosPessoais"
+        component={EditarDadosPessoaisScreen}
+        options={{ presentation: 'modal', animation: 'slide_from_bottom' }}
+      />
+      <Stack.Screen
+        name="UnitedNewsPlayer"
+        component={UnitedNewsPlayerScreen}
         options={{ presentation: 'modal', animation: 'slide_from_bottom' }}
       />
     </Stack.Navigator>

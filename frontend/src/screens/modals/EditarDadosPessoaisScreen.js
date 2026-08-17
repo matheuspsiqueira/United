@@ -1,20 +1,23 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
-  Modal, View, Text, TextInput, TouchableOpacity, StyleSheet,
+  View, Text, TextInput, TouchableOpacity, StyleSheet,
   ActivityIndicator, ScrollView, Image, KeyboardAvoidingView, Platform,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
+import * as NavigationBar from 'expo-navigation-bar';
+import { useFocusEffect } from '@react-navigation/native';
 
 import { COLORS, FONTS } from '../../theme/colors';
 import { useAuth } from '../../contexts/AuthContext';
 
-export default function EditarDadosModal({ visible, onClose }) {
+export default function EditarDadosPessoaisScreen({ navigation }) {
   const { usuario, atualizarPerfil, trocarSenha } = useAuth();
 
   const [nomeCompleto, setNomeCompleto] = useState(usuario?.nome_completo || '');
   const [email, setEmail] = useState(usuario?.email || '');
-  const [fotoUri, setFotoUri] = useState(null); // uri local escolhida agora (ainda não enviada)
+  const [fotoUri, setFotoUri] = useState(null);
   const [salvandoDados, setSalvandoDados] = useState(false);
   const [erroDados, setErroDados] = useState(null);
 
@@ -46,7 +49,7 @@ export default function EditarDadosModal({ visible, onClose }) {
     setSalvandoDados(true);
     try {
       await atualizarPerfil({ nomeCompleto, email, fotoUri });
-      setFotoUri(null); // já foi enviada e o usuario do contexto já reflete a nova foto
+      setFotoUri(null);
     } catch (e) {
       setErroDados(e.message);
     } finally {
@@ -79,21 +82,28 @@ export default function EditarDadosModal({ visible, onClose }) {
 
   const fotoExibida = fotoUri || usuario?.foto_perfil || null;
 
+    useFocusEffect(
+      useCallback(() => {
+        if (Platform.OS !== 'android') return undefined;
+        NavigationBar.setVisibilityAsync('hidden');
+        NavigationBar.setBehaviorAsync('overlay-swipe');
+        return () => {
+          NavigationBar.setVisibilityAsync('visible');
+        };
+      }, [])
+    );
+
   return (
-    <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" onRequestClose={onClose}>
-      <KeyboardAvoidingView
-        style={styles.container}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      >
+    <SafeAreaView style={styles.container} edges={['top']}>
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <View style={styles.header}>
           <Text style={styles.headerTitle}>Editar dados</Text>
-          <TouchableOpacity onPress={onClose}>
+          <TouchableOpacity onPress={() => navigation.goBack()}>
             <Ionicons name="close" size={26} color={COLORS.textPrimary} />
           </TouchableOpacity>
         </View>
 
         <ScrollView contentContainerStyle={styles.content}>
-          {/* --- Dados pessoais --- */}
           <TouchableOpacity style={styles.avatarWrapper} onPress={escolherFoto}>
             {fotoExibida ? (
               <Image source={{ uri: fotoExibida }} style={styles.avatar} />
@@ -141,7 +151,6 @@ export default function EditarDadosModal({ visible, onClose }) {
             )}
           </TouchableOpacity>
 
-          {/* --- Trocar senha --- */}
           <View style={styles.divider} />
           <Text style={styles.sectionTitle}>Trocar senha</Text>
           {usuario?.senha_temporaria && (
@@ -198,7 +207,7 @@ export default function EditarDadosModal({ visible, onClose }) {
           </TouchableOpacity>
         </ScrollView>
       </KeyboardAvoidingView>
-    </Modal>
+    </SafeAreaView>
   );
 }
 

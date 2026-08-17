@@ -1,9 +1,11 @@
-import React from 'react';
+import React, {useCallback} from 'react';
 import {
   Modal, View, Text, TouchableOpacity, StyleSheet,
-  ScrollView, Image, Linking,
+  ScrollView, Image, Linking, Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import * as NavigationBar from 'expo-navigation-bar';
+import { useFocusEffect } from '@react-navigation/native';
 
 import { COLORS, FONTS } from '../../theme/colors';
 import { getCampusAccent } from '../../theme/campusAccent';
@@ -17,6 +19,17 @@ export default function EventoDetalheModal({ visible, evento, onClose }) {
   const abrirLinkIngresso = () => {
     if (evento.link_ingresso) Linking.openURL(evento.link_ingresso);
   };
+
+    useFocusEffect(
+      useCallback(() => {
+        if (Platform.OS !== 'android') return undefined;
+        NavigationBar.setVisibilityAsync('hidden');
+        NavigationBar.setBehaviorAsync('overlay-swipe');
+        return () => {
+          NavigationBar.setVisibilityAsync('visible');
+        };
+      }, [])
+    );
 
   return (
     <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" onRequestClose={onClose}>
