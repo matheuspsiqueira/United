@@ -17,7 +17,6 @@ import { getCampusAccent } from '../theme/campusAccent';
 import GlassSurface from '../components/GlassSurface';
 import { useAuth } from '../contexts/AuthContext';
 import { listarSeries } from '../services/seriesApi';
-import SerieDetalheModal from './modals/SerieDetalheModal';
 
 function formatarDataLancamento(dataStr) {
   const data = new Date(`${dataStr}T00:00:00`);
@@ -78,12 +77,11 @@ function SerieCard({ serie, onPress }) {
   );
 }
 
-export default function SeriesScreen() {
-  const { usuario, token } = useAuth();
-  const [grupos, setGrupos] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [erro, setErro] = useState(null);
-  const [serieAtivaId, setSerieAtivaId] = useState(null);
+export default function SeriesScreen({ navigation }) {
+    const { usuario, token } = useAuth();
+    const [grupos, setGrupos] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [erro, setErro] = useState(null);
 
   const carregar = useCallback(async () => {
     setLoading(true);
@@ -151,7 +149,7 @@ export default function SeriesScreen() {
                     <SerieCard
                       key={serie.id}
                       serie={serie}
-                      onPress={() => setSerieAtivaId(serie.id)}
+                      onPress={() => navigation.getParent()?.navigate('SerieDetalhe', { serieId: serie.id })}
                     />
                   ))}
                 </ScrollView>
@@ -160,12 +158,6 @@ export default function SeriesScreen() {
           </ScrollView>
         )}
       </SafeAreaView>
-
-      <SerieDetalheModal
-        visible={!!serieAtivaId}
-        serieId={serieAtivaId}
-        onClose={() => setSerieAtivaId(null)}
-      />
     </View>
   );
 }

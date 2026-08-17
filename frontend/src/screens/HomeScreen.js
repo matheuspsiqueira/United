@@ -21,7 +21,6 @@ import { getCampuses, getProximoCulto } from '../services/campusApi';
 import { listarEventos } from '../services/conteudoApi';
 import { listarSeries } from '../services/seriesApi';
 import EventoDetalheModal from './modals/EventoDetalheModal';
-import SerieDetalheModal from './modals/SerieDetalheModal';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const SCREEN_PADDING = 16;
@@ -60,7 +59,6 @@ export default function HomeScreen({ navigation }) {
   const [eventoSelecionado, setEventoSelecionado] = useState(null);
   const [loading, setLoading] = useState(true);
   const [erro, setErro] = useState(null);
-  const [serieDoMesId, setSerieDoMesId] = useState(null);
 
   const carregar = useCallback(() => {
     setLoading(true);
@@ -278,7 +276,7 @@ export default function HomeScreen({ navigation }) {
           {serieDestaque && (
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Série do mês</Text>
-            <TouchableOpacity onPress={() => setSerieDoMesId(serieDestaque.id)}>
+            <TouchableOpacity onPress={() => navigation.getParent()?.getParent()?.navigate('SerieDetalhe', { serieId: serieDestaque.id })}>
               <View style={styles.serieCard}>
                   {serieDestaque.capa ? (
                     <Image source={{ uri: serieDestaque.capa }} style={StyleSheet.absoluteFill} resizeMode="cover" />
@@ -331,12 +329,6 @@ export default function HomeScreen({ navigation }) {
         visible={!!eventoSelecionado}
         evento={eventoSelecionado}
         onClose={() => setEventoSelecionado(null)}
-      />
-
-      <SerieDetalheModal
-        visible={!!serieDoMesId}
-        serieId={serieDoMesId}
-        onClose={() => setSerieDoMesId(null)}
       />
     </View>
   );

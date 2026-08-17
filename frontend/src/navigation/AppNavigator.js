@@ -1,15 +1,10 @@
 import React from 'react';
 import { NavigationContainer, DarkTheme } from '@react-navigation/native';
 
-import RootNavigator from './RootNavigator';
+import AuthenticatedNavigator from './AuthenticatedNavigator';
 import GuestNavigator from './GuestNavigator';
 import { COLORS } from '../theme/colors';
 
-// Só pode existir um NavigationContainer na árvore. Por isso ele mora aqui,
-// num nível acima do RootNavigator (autenticado) e do GuestNavigator
-// (visitante) — e alterna entre os dois filhos por dentro do mesmo Container.
-// Vantagem de graça: trocar de árvore assim já reseta o histórico de
-// navegação sozinho (padrão recomendado pela lib pra fluxo de auth).
 const navigationTheme = {
   ...DarkTheme,
   colors: {
@@ -25,7 +20,7 @@ export default function AppNavigator({ isAuthenticated, onLoginSuccess }) {
   return (
     <NavigationContainer theme={navigationTheme}>
       {isAuthenticated ? (
-        <RootNavigator />
+        <AuthenticatedNavigator />
       ) : (
         <GuestNavigator onLoginSuccess={onLoginSuccess} />
       )}

@@ -42,16 +42,6 @@ export default function App() {
     JetBrainsMono_500Medium,
   });
 
-  // Cor de fundo padrão da barra de navegação do Android — sem isso ela
-  // fica branca por padrão do sistema e quebra o tema escuro toda vez que
-  // algo abre em janela própria (ex: Modal). Roda uma vez, no boot do app.
-  useEffect(() => {
-    if (Platform.OS === 'android') {
-      NavigationBar.setBackgroundColorAsync(COLORS.background);
-      NavigationBar.setButtonStyleAsync('light');
-    }
-  }, []);
-
   const onLayoutRootView = useCallback(async () => {
     if (fontsLoaded) {
       await SplashScreen.hideAsync();
