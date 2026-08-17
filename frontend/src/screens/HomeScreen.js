@@ -19,8 +19,9 @@ import GlassSurface from '../components/GlassSurface';
 import { useAuth } from '../contexts/AuthContext';
 import { getCampuses, getProximoCulto } from '../services/campusApi';
 import { listarEventos } from '../services/conteudoApi';
-import { SERIES } from '../data/mockData';
+import { listarSeries } from '../services/seriesApi';
 import EventoDetalheModal from './modals/EventoDetalheModal';
+import SerieDetalheModal from './modals/SerieDetalheModal';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const SCREEN_PADDING = 16;
@@ -34,6 +35,20 @@ const PLACEHOLDER_GRADIENTS = [
   ['#3C3489', '#712B13'],
 ];
 
+// Série do mês = série do campus do usuário cuja data_lancamento cai no
+// mês/ano atual. Se o campus não lançou nada nesse mês, não tem destaque
+// (a seção some, igual eventosDoCampus.length > 0 já faz).
+function getSerieDoMes(series, campusId) {
+  const agora = new Date();
+  return (
+    series.find((s) => {
+      if (s.campus !== campusId) return false;
+      const d = new Date(`${s.data_lancamento}T00:00:00`);
+      return d.getMonth() === agora.getMonth() && d.getFullYear() === agora.getFullYear();
+    }) || null
+  );
+}
+
 export default function HomeScreen({ navigation }) {
   const { usuario, token } = useAuth();
   const campusAtualId = usuario?.campus?.id;
@@ -41,18 +56,26 @@ export default function HomeScreen({ navigation }) {
   const [campuses, setCampuses] = useState([]);
   const [proximoCulto, setProximoCulto] = useState(null);
   const [eventos, setEventos] = useState([]);
+  const [series, setSeries] = useState([]);
   const [eventoSelecionado, setEventoSelecionado] = useState(null);
   const [loading, setLoading] = useState(true);
   const [erro, setErro] = useState(null);
+  const [serieDoMesId, setSerieDoMesId] = useState(null);
 
   const carregar = useCallback(() => {
     setLoading(true);
     setErro(null);
-    Promise.all([getCampuses(), getProximoCulto(campusAtualId), listarEventos(token)])
-      .then(([listaCampuses, culto, listaEventos]) => {
+    Promise.all([
+      getCampuses(),
+      getProximoCulto(campusAtualId),
+      listarEventos(token),
+      listarSeries(token),
+    ])
+      .then(([listaCampuses, culto, listaEventos, listaSeries]) => {
         setCampuses(listaCampuses);
         setProximoCulto(culto);
         setEventos(listaEventos);
+        setSeries(listaSeries);
       })
       .catch((e) => setErro(e.message))
       .finally(() => setLoading(false));
@@ -90,14 +113,7 @@ export default function HomeScreen({ navigation }) {
   // Eventos reais, só do campus do usuário logado.
   const eventosDoCampus = eventos.filter((e) => e.campus.id === campusAtualId);
 
-  // TODO BACKEND: SERIES ainda é mock — mesma ponte temporária por slug
-  // usada antes; some quando o app `conteudo` migrar Séries pra API.
-  const campusSlug = campus.nome
-    .toLowerCase()
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .replace(/\s+/g, '-');
-  const serieDestaque = SERIES.find((s) => s.campusId === campusSlug);
+  const serieDestaque = getSerieDoMes(series, campusAtualId);
 
   return (
     <View style={styles.root}>
@@ -257,20 +273,23 @@ export default function HomeScreen({ navigation }) {
               </ScrollView>
             </View>
           )}
-          
 
-          {/* Série do mês — card grande com capa */}
+          {/* Série do mês — card grande com capa real, dados vindos da API */}
           {serieDestaque && (
-            <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Série do mês</Text>
-              <TouchableOpacity onPress={() => navigation.getParent()?.navigate('Series')}>
-                <View style={styles.serieCard}>
-                  <LinearGradient
-                    colors={['#3C3489', '#712B13']}
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 1, y: 1 }}
-                    style={StyleSheet.absoluteFill}
-                  />
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Série do mês</Text>
+            <TouchableOpacity onPress={() => setSerieDoMesId(serieDestaque.id)}>
+              <View style={styles.serieCard}>
+                  {serieDestaque.capa ? (
+                    <Image source={{ uri: serieDestaque.capa }} style={StyleSheet.absoluteFill} resizeMode="cover" />
+                  ) : (
+                    <LinearGradient
+                      colors={['#3C3489', '#712B13']}
+                      start={{ x: 0, y: 0 }}
+                      end={{ x: 1, y: 1 }}
+                      style={StyleSheet.absoluteFill}
+                    />
+                  )}
                   <LinearGradient
                     colors={['transparent', 'rgba(5,6,10,0.2)', 'rgba(5,6,10,0.95)']}
                     style={StyleSheet.absoluteFill}
@@ -278,7 +297,8 @@ export default function HomeScreen({ navigation }) {
                   <View style={styles.serieContent}>
                     <Text style={styles.serieTitulo}>{serieDestaque.titulo}</Text>
                     <Text style={styles.serieEpisodios}>
-                      {serieDestaque.episodios.length} episódios · {campus.nome}
+                      {serieDestaque.quantidade_episodios}{' '}
+                      {serieDestaque.quantidade_episodios === 1 ? 'episódio' : 'episódios'} · {campus.nome}
                     </Text>
                   </View>
                 </View>
@@ -311,6 +331,12 @@ export default function HomeScreen({ navigation }) {
         visible={!!eventoSelecionado}
         evento={eventoSelecionado}
         onClose={() => setEventoSelecionado(null)}
+      />
+
+      <SerieDetalheModal
+        visible={!!serieDoMesId}
+        serieId={serieDoMesId}
+        onClose={() => setSerieDoMesId(null)}
       />
     </View>
   );

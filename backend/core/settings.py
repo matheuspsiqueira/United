@@ -11,7 +11,7 @@ SECRET_KEY = config('SECRET_KEY')
 
 DEBUG = config('DEBUG', default=True, cast=bool)
 
-ALLOWED_HOSTS = ['localhost', '127.0.0.1', '.ngrok-free.app']
+ALLOWED_HOSTS = ['*']
 
 
 
@@ -28,6 +28,7 @@ INSTALLED_APPS = [
     'campus',
     'usuarios',
     'conteudo',
+    'series',
 ]
 
 MIDDLEWARE = [
@@ -108,7 +109,7 @@ MEDIA_ROOT = BASE_DIR / 'media'
 STATIC_URL = 'static/'
 
 CSRF_TRUSTED_ORIGINS = [
-    'https://*.ngrok-free.app',
+    'https://*.trycloudflare.com',
 ]
 
 
