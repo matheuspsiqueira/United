@@ -9,10 +9,12 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   Dimensions,
+  Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
+import * as NavigationBar from 'expo-navigation-bar';
 import YoutubePlayer from 'react-native-youtube-iframe';
 
 import { COLORS, FONTS } from '../../theme/colors';
@@ -21,8 +23,9 @@ import GlassSurface from '../../components/GlassSurface';
 import { useAuth } from '../../contexts/AuthContext';
 import { buscarSerie } from '../../services/seriesApi';
 
-const { width } = Dimensions.get('window');
+const { width, height } = Dimensions.get('window');
 const PLAYER_HEIGHT = (width * 9) / 16;
+const CAPA_HEIGHT = height * 0.5;
 
 export default function SerieDetalheModal({ visible, serieId, onClose }) {
   const { token } = useAuth();
@@ -31,6 +34,7 @@ export default function SerieDetalheModal({ visible, serieId, onClose }) {
   const [erro, setErro] = useState(null);
   const [episodioAtivo, setEpisodioAtivo] = useState(null);
   const [playing, setPlaying] = useState(true);
+  const [descricaoExpandida, setDescricaoExpandida] = useState(false);
 
   const carregar = useCallback(async () => {
     if (!serieId) return;
@@ -50,12 +54,26 @@ export default function SerieDetalheModal({ visible, serieId, onClose }) {
     if (visible) carregar();
   }, [visible, carregar]);
 
+  // Modo cinema: some com a barra de navegação do Android só enquanto o
+  // player tá na tela — volta ao normal ao fechar o episódio ou o modal
+  // inteiro. Não mexe na status bar, só na nav bar do sistema.
+  useEffect(() => {
+    if (Platform.OS !== 'android') return;
+    if (episodioAtivo) {
+      NavigationBar.setVisibilityAsync('hidden');
+      NavigationBar.setBehaviorAsync('overlay-swipe');
+    } else {
+      NavigationBar.setVisibilityAsync('visible');
+    }
+  }, [episodioAtivo]);
+
   // Reseta o estado interno ao fechar, pra próxima abertura não flashar
   // conteúdo antigo antes do fetch novo terminar.
   const fechar = () => {
     setSerie(null);
     setEpisodioAtivo(null);
     setPlaying(true);
+    setDescricaoExpandida(false);
     onClose();
   };
 
@@ -110,7 +128,24 @@ export default function SerieDetalheModal({ visible, serieId, onClose }) {
               <View style={styles.header}>
                 <Text style={[styles.campusTag, { color: accent.light }]}>{serie.campus_nome}</Text>
                 <Text style={styles.titulo}>{serie.titulo}</Text>
-                {!!serie.descricao && <Text style={styles.descricao}>{serie.descricao}</Text>}
+
+                {!!serie.descricao && (
+                  <TouchableOpacity
+                    activeOpacity={0.7}
+                    onPress={() => setDescricaoExpandida((v) => !v)}
+                    style={styles.descricaoWrapper}
+                  >
+                    <Text
+                      style={styles.descricao}
+                      numberOfLines={descricaoExpandida ? undefined : 3}
+                    >
+                      {serie.descricao}
+                    </Text>
+                    <Text style={[styles.verMaisTexto, { color: accent.light }]}>
+                      {descricaoExpandida ? 'ler menos' : '...ler mais'}
+                    </Text>
+                  </TouchableOpacity>
+                )}
               </View>
 
               <View style={styles.episodios}>
@@ -162,11 +197,13 @@ const styles = StyleSheet.create({
   erroTexto: { color: COLORS.textSecondary, fontFamily: FONTS.bodyRegular, textAlign: 'center' },
   retryBtn: { borderWidth: 1, borderColor: COLORS.glassBorder, borderRadius: 10, paddingVertical: 8, paddingHorizontal: 16, alignSelf: 'center' },
   retryTexto: { color: COLORS.textPrimary, fontFamily: FONTS.bodyMedium },
-  capa: { width: '100%', height: 220 },
+  capa: { width: '100%', height: CAPA_HEIGHT },
   header: { padding: 16 },
   campusTag: { fontSize: 11, fontFamily: FONTS.mono, textTransform: 'uppercase' },
   titulo: { fontSize: 22, fontFamily: FONTS.displayBold, color: COLORS.textPrimary, marginTop: 4 },
-  descricao: { fontSize: 13, fontFamily: FONTS.bodyRegular, color: COLORS.textSecondary, marginTop: 8, lineHeight: 19 },
+  descricaoWrapper: { marginTop: 8 },
+  descricao: { fontSize: 13, fontFamily: FONTS.bodyRegular, color: COLORS.textSecondary, lineHeight: 19 },
+  verMaisTexto: { fontSize: 12, fontFamily: FONTS.bodySemiBold, marginTop: 4 },
   episodios: { paddingHorizontal: 16, gap: 10 },
   epCard: { flexDirection: 'row' },
   epThumb: { width: 110, height: 72 },

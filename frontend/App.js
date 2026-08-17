@@ -1,7 +1,8 @@
-import React, { useCallback, useState } from 'react';
-import { View } from 'react-native';
+import React, { useCallback, useEffect, useState } from 'react';
+import { View, Platform } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import * as SplashScreen from 'expo-splash-screen';
+import * as NavigationBar from 'expo-navigation-bar';
 import { useFonts } from 'expo-font';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { Sora_400Regular, Sora_600SemiBold, Sora_700Bold } from '@expo-google-fonts/sora';
@@ -40,6 +41,16 @@ export default function App() {
     Inter_600SemiBold,
     JetBrainsMono_500Medium,
   });
+
+  // Cor de fundo padrão da barra de navegação do Android — sem isso ela
+  // fica branca por padrão do sistema e quebra o tema escuro toda vez que
+  // algo abre em janela própria (ex: Modal). Roda uma vez, no boot do app.
+  useEffect(() => {
+    if (Platform.OS === 'android') {
+      NavigationBar.setBackgroundColorAsync(COLORS.background);
+      NavigationBar.setButtonStyleAsync('light');
+    }
+  }, []);
 
   const onLayoutRootView = useCallback(async () => {
     if (fontsLoaded) {
