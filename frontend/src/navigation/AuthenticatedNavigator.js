@@ -8,6 +8,7 @@ import NoticiaDetalheScreen from '../screens/modals/NoticiaDetalheScreen';
 import VersiculosFavoritosScreen from '../screens/modals/VersiculosFavoritosScreen';
 import EditarDadosPessoaisScreen from '../screens/modals/EditarDadosPessoaisScreen';
 import UnitedNewsPlayerScreen from '../screens/modals/UnitedNewsPlayerScreen';
+import SeletorBibliaScreen from '../screens/modals/SeletorBibliaScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -43,6 +44,11 @@ export default function AuthenticatedNavigator() {
       <Stack.Screen
         name="UnitedNewsPlayer"
         component={UnitedNewsPlayerScreen}
+        options={{ presentation: 'modal', animation: 'slide_from_bottom' }}
+      />
+      <Stack.Screen
+        name="SeletorBiblia"
+        component={SeletorBibliaScreen}
         options={{ presentation: 'modal', animation: 'slide_from_bottom' }}
       />
     </Stack.Navigator>
