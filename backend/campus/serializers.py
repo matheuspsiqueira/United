@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Campus, Pastor, HorarioCulto
+from .models import Campus, Pastor, HorarioCulto, RedeSocial
 
 
 class PastorSerializer(serializers.ModelSerializer):
@@ -23,27 +23,36 @@ class HorarioCultoSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = HorarioCulto
-        fields = ['dia', 'hora']
+        fields = ['nome', 'dia', 'hora']
 
     def get_hora(self, obj):
         return obj.hora.strftime('%H:%M')
+
+
+class RedeSocialSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = RedeSocial
+        fields = ['plataforma', 'url']
 
 
 class ProximoCultoSerializer(serializers.Serializer):
     data = serializers.DateField()
     hora = serializers.TimeField(format='%H:%M')
     dia_semana = serializers.CharField()
+    nome = serializers.CharField()
 
 
 class CampusSerializer(serializers.ModelSerializer):
     corTema = serializers.CharField(source='cor_tema')
     anoFundacao = serializers.IntegerField(source='ano_fundacao')
+    tituloPastoral = serializers.CharField(source='titulo_pastoral')
     pastores = PastorSerializer(many=True, read_only=True)
     horarios = HorarioCultoSerializer(many=True, read_only=True)
+    redesSociais = RedeSocialSerializer(source='redes_sociais', many=True, read_only=True)
 
     class Meta:
         model = Campus
         fields = [
-            'id', 'nome', 'regiao', 'corTema', 'endereco',
-            'pastores', 'anoFundacao', 'horarios',
+            'id', 'nome', 'regiao', 'corTema', 'endereco', 'descricao',
+            'tituloPastoral', 'pastores', 'anoFundacao', 'horarios', 'redesSociais',
         ]

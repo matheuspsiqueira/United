@@ -143,7 +143,9 @@ export default function HomeScreen({ navigation }) {
                 <Text style={styles.heroTitle}>
                   {formatarData(proximoCulto.data)} às {proximoCulto.hora}
                 </Text>
-                <Text style={styles.heroSub}>Templo {campus.nome}</Text>
+                <Text style={styles.heroSub}>
+                  {proximoCulto.nome || `Templo ${campus.nome}`}
+                </Text>
                 <TouchableOpacity
                   style={[styles.heroCta, { backgroundColor: accent.base }]}
                   onPress={() => navigation.navigate('SobreCampus', { campusId: campus.id })}

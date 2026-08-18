@@ -34,11 +34,6 @@ export default function HomeStackNavigator() {
         options={{ headerShown: true }}
       />
       <Stack.Screen
-        name="AgendaCultos"
-        component={AgendaCultosScreen}
-        options={{ headerShown: true, title: 'Agenda de Cultos' }}
-      />
-      <Stack.Screen
         name="SobreUnited"
         component={SobreUnitedScreen}
         options={{ headerShown: true, title: 'Sobre a United' }}
@@ -46,7 +41,7 @@ export default function HomeStackNavigator() {
       <Stack.Screen
         name="SobreCampus"
         component={SobreCampusScreen}
-        options={{ headerShown: true, title: 'Sobre o Campus' }}
+        options={{ headerShown: true }}
       />
       <Stack.Screen
         name="Eventos"
