@@ -3,4 +3,4 @@
 // local é reiniciado (plano free não tem subdomínio fixo).
 
 // src/config/api.js
-export const API_BASE_URL = 'https://paying-recovery-ericsson-simple.trycloudflare.com/api';
+export const API_BASE_URL = 'https://differential-raid-the-power.trycloudflare.com/api';

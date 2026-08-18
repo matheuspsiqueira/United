@@ -1,8 +1,9 @@
-import React, {useCallback} from 'react';
+import React, { useCallback } from 'react';
 import {
-  Modal, View, Text, TouchableOpacity, StyleSheet,
+  View, Text, TouchableOpacity, StyleSheet,
   ScrollView, Image, Linking, Platform,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import * as NavigationBar from 'expo-navigation-bar';
 import { useFocusEffect } from '@react-navigation/native';
@@ -10,8 +11,8 @@ import { useFocusEffect } from '@react-navigation/native';
 import { COLORS, FONTS } from '../../theme/colors';
 import { getCampusAccent } from '../../theme/campusAccent';
 
-export default function EventoDetalheModal({ visible, evento, onClose }) {
-  if (!evento) return null;
+export default function EventoDetalheScreen({ route, navigation }) {
+  const { evento } = route.params;
 
   const accent = getCampusAccent(evento.campus.corTema);
   const gratuito = !evento.valor || Number(evento.valor) === 0;
@@ -20,68 +21,66 @@ export default function EventoDetalheModal({ visible, evento, onClose }) {
     if (evento.link_ingresso) Linking.openURL(evento.link_ingresso);
   };
 
-    useFocusEffect(
-      useCallback(() => {
-        if (Platform.OS !== 'android') return undefined;
-        NavigationBar.setVisibilityAsync('hidden');
-        NavigationBar.setBehaviorAsync('overlay-swipe');
-        return () => {
-          NavigationBar.setVisibilityAsync('visible');
-        };
-      }, [])
-    );
+  useFocusEffect(
+    useCallback(() => {
+      if (Platform.OS !== 'android') return undefined;
+      NavigationBar.setVisibilityAsync('hidden');
+      NavigationBar.setBehaviorAsync('overlay-swipe');
+      return () => {
+        NavigationBar.setVisibilityAsync('visible');
+      };
+    }, [])
+  );
 
   return (
-    <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" onRequestClose={onClose}>
-      <View style={styles.container}>
-        <View style={styles.header}>
-          <Text style={styles.headerTitle}>Evento</Text>
-          <TouchableOpacity onPress={onClose}>
-            <Ionicons name="close" size={26} color={COLORS.textPrimary} />
-          </TouchableOpacity>
+    <SafeAreaView style={styles.container} edges={['top']}>
+      <View style={styles.header}>
+        <Text style={styles.headerTitle}>Evento</Text>
+        <TouchableOpacity onPress={() => navigation.goBack()}>
+          <Ionicons name="close" size={26} color={COLORS.textPrimary} />
+        </TouchableOpacity>
+      </View>
+
+      <ScrollView contentContainerStyle={styles.content}>
+        {evento.capa ? (
+          <Image source={{ uri: evento.capa }} style={styles.capa} />
+        ) : (
+          <View style={[styles.capaPlaceholder, { backgroundColor: accent.glow(0.2) }]} />
+        )}
+
+        <View style={[styles.campusTag, { backgroundColor: accent.glow(0.16) }]}>
+          <View style={[styles.campusDot, { backgroundColor: accent.base }]} />
+          <Text style={[styles.campusTagText, { color: accent.light }]}>{evento.campus.nome}</Text>
         </View>
 
-        <ScrollView contentContainerStyle={styles.content}>
-          {evento.capa ? (
-            <Image source={{ uri: evento.capa }} style={styles.capa} />
-          ) : (
-            <View style={[styles.capaPlaceholder, { backgroundColor: accent.glow(0.2) }]} />
-          )}
+        <Text style={styles.titulo}>{evento.titulo}</Text>
 
-          <View style={[styles.campusTag, { backgroundColor: accent.glow(0.16) }]}>
-            <View style={[styles.campusDot, { backgroundColor: accent.base }]} />
-            <Text style={[styles.campusTagText, { color: accent.light }]}>{evento.campus.nome}</Text>
-          </View>
+        <View style={styles.infoRow}>
+          <Ionicons name="calendar-outline" size={16} color={COLORS.textSecondary} />
+          <Text style={styles.infoText}>
+            {formatarData(evento.data)}{evento.horario ? ` às ${evento.horario.slice(0, 5)}` : ''}
+          </Text>
+        </View>
 
-          <Text style={styles.titulo}>{evento.titulo}</Text>
+        <View style={styles.infoRow}>
+          <Ionicons name="pricetag-outline" size={16} color={COLORS.textSecondary} />
+          <Text style={styles.infoText}>{gratuito ? 'Gratuito' : formatarValor(evento.valor)}</Text>
+        </View>
 
-          <View style={styles.infoRow}>
-            <Ionicons name="calendar-outline" size={16} color={COLORS.textSecondary} />
-            <Text style={styles.infoText}>
-              {formatarData(evento.data)}{evento.horario ? ` às ${evento.horario.slice(0, 5)}` : ''}
+        <Text style={styles.descricao}>{evento.descricao}</Text>
+
+        {evento.link_ingresso && (
+          <TouchableOpacity
+            style={[styles.buyButton, { backgroundColor: accent.base }]}
+            onPress={abrirLinkIngresso}
+          >
+            <Text style={[styles.buyButtonText, { color: accent.textOnAccent }]}>
+              Comprar ingresso
             </Text>
-          </View>
-
-          <View style={styles.infoRow}>
-            <Ionicons name="pricetag-outline" size={16} color={COLORS.textSecondary} />
-            <Text style={styles.infoText}>{gratuito ? 'Gratuito' : formatarValor(evento.valor)}</Text>
-          </View>
-
-          <Text style={styles.descricao}>{evento.descricao}</Text>
-
-          {evento.link_ingresso && (
-            <TouchableOpacity
-              style={[styles.buyButton, { backgroundColor: accent.base }]}
-              onPress={abrirLinkIngresso}
-            >
-              <Text style={[styles.buyButtonText, { color: accent.textOnAccent }]}>
-                Comprar ingresso
-              </Text>
-            </TouchableOpacity>
-          )}
-        </ScrollView>
-      </View>
-    </Modal>
+          </TouchableOpacity>
+        )}
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
