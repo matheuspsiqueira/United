@@ -3,4 +3,4 @@
 // local é reiniciado (plano free não tem subdomínio fixo).
 
 // src/config/api.js
-export const API_BASE_URL = 'https://educators-arizona-graphic-affiliate.trycloudflare.com/api';
+export const API_BASE_URL = 'https://bend-confidence-angela-fan.trycloudflare.com/api';

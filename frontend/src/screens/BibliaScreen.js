@@ -10,6 +10,7 @@ import {
   useWindowDimensions,
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 
@@ -28,13 +29,13 @@ const VERSOES = [
 
 const HIGHLIGHT_LIST = Object.values(HIGHLIGHT_COLORS);
 
-// Dimensões estimadas do menu flutuante, usadas só pro clamp de posição
-// (não precisam ser exatas, só próximas o bastante pra não estourar a tela)
 const MENU_WIDTH = 232;
 const MENU_HEIGHT = 52;
-const TAB_BAR_RESERVA = 130; // mesma reserva usada no paddingBottom do scroll
+const TAB_BAR_RESERVA = 130;
 
-export default function BibliaScreen({ navigation }) {
+const STORAGE_KEY_POSICAO = '@united:biblia:posicao';
+
+export default function BibliaScreen({ navigation, route }) {
   const { token, usuario } = useAuth();
   const { width: screenWidth, height: screenHeight } = useWindowDimensions();
   const insets = useSafeAreaInsets();
@@ -48,6 +49,7 @@ export default function BibliaScreen({ navigation }) {
   const [livros, setLivros] = useState([]);
   const [livrosCarregando, setLivrosCarregando] = useState(true);
   const [livrosErro, setLivrosErro] = useState(null);
+  const [posicaoRestaurada, setPosicaoRestaurada] = useState(false);
 
   const [livroAtivo, setLivroAtivo] = useState(null);
   const [capituloAtivo, setCapituloAtivo] = useState(1);
@@ -56,10 +58,9 @@ export default function BibliaScreen({ navigation }) {
   const [capituloErro, setCapituloErro] = useState(null);
 
   const [versiculoSelecionadoId, setVersiculoSelecionadoId] = useState(null);
-  // Posição do menu flutuante, calculada a partir do toque no versículo.
-  // null enquanto nenhum versículo tá selecionado.
   const [menuPos, setMenuPos] = useState(null);
   const [grifos, setGrifos] = useState({});
+  const [versiculoDestacadoId, setVersiculoDestacadoId] = useState(null);
 
   useEffect(() => {
     if (!token) {
@@ -86,12 +87,33 @@ export default function BibliaScreen({ navigation }) {
     setLivrosErro(null);
 
     getLivros()
-      .then((data) => {
+      .then(async (data) => {
         if (cancelado) return;
         const lista = Array.isArray(data) ? data : data?.books || [];
         setLivros(lista);
-        const primeiro = lista[0];
-        if (primeiro) setLivroAtivo(primeiro);
+
+        let livroInicial = lista[0] || null;
+        let capituloInicial = 1;
+        let versaoInicial = 'nvi';
+
+        try {
+          const salvo = await AsyncStorage.getItem(STORAGE_KEY_POSICAO);
+          if (salvo) {
+            const posicao = JSON.parse(salvo);
+            const livroSalvo = lista.find((l) => slugLivro(l) === posicao.livroSlug);
+            if (livroSalvo) {
+              livroInicial = livroSalvo;
+              capituloInicial = posicao.capitulo || 1;
+              versaoInicial = posicao.versao || 'nvi';
+            }
+          }
+        } catch (e) {}
+
+        if (cancelado) return;
+        if (livroInicial) setLivroAtivo(livroInicial);
+        setCapituloAtivo(capituloInicial);
+        setVersao(versaoInicial);
+        setPosicaoRestaurada(true);
       })
       .catch((err) => {
         if (!cancelado) setLivrosErro(err.message || 'Não foi possível carregar os livros.');
@@ -102,6 +124,33 @@ export default function BibliaScreen({ navigation }) {
 
     return () => { cancelado = true; };
   }, []);
+
+  useEffect(() => {
+    if (!route?.params?.verseIdAlvo) return;
+    if (livros.length === 0) return;
+
+    const { versaoAlvo, livroSlugAlvo, capituloAlvo, verseIdAlvo } = route.params;
+    const livro = livros.find((l) => slugLivro(l) === livroSlugAlvo);
+    if (!livro) return;
+
+    setVersao(versaoAlvo);
+    setLivroAtivo(livro);
+    setCapituloAtivo(capituloAlvo);
+    setVersiculoDestacadoId(verseIdAlvo);
+
+    navigation.setParams({
+      versaoAlvo: undefined,
+      livroSlugAlvo: undefined,
+      capituloAlvo: undefined,
+      verseIdAlvo: undefined,
+    });
+  }, [route?.params?.verseIdAlvo, livros]);
+
+  useEffect(() => {
+    if (!versiculoDestacadoId) return;
+    const timer = setTimeout(() => setVersiculoDestacadoId(null), 2200);
+    return () => clearTimeout(timer);
+  }, [versiculoDestacadoId]);
 
   useEffect(() => {
     if (!livroAtivo) return;
@@ -126,13 +175,19 @@ export default function BibliaScreen({ navigation }) {
     return () => { cancelado = true; };
   }, [livroAtivo, capituloAtivo, versao]);
 
+  useEffect(() => {
+    if (!posicaoRestaurada || !livroAtivo) return;
+    const slug = slugLivro(livroAtivo);
+    if (!slug) return;
+
+    AsyncStorage.setItem(
+      STORAGE_KEY_POSICAO,
+      JSON.stringify({ versao, livroSlug: slug, capitulo: capituloAtivo })
+    ).catch(() => {});
+  }, [posicaoRestaurada, versao, livroAtivo, capituloAtivo]);
+
   const totalCapitulos = livroAtivo?.chapters || livroAtivo?.totalChapters || 1;
 
-  // Calcula onde o menu deve aparecer a partir do ponto do toque (pageX/pageY,
-  // relativos à tela inteira — por isso o menu fica FORA da SafeAreaView).
-  // Tenta abrir ACIMA do dedo (padrão de "seleção de texto"); se não couber
-  // (verso muito no topo da tela), abre ABAIXO. Sempre clampado nas laterais
-  // e sem invadir a área reservada da tab bar flutuante.
   const calcularMenuPos = (pageX, pageY) => {
     const left = Math.min(
       Math.max(pageX - MENU_WIDTH / 2, 12),
@@ -284,6 +339,7 @@ export default function BibliaScreen({ navigation }) {
               const id = `${versao}|${slugLivroAtivo}|${capituloAtivo}|${v.numero}`;
               const grifo = grifos[id];
               const selecionado = versiculoSelecionadoId === id;
+              const destacado = versiculoDestacadoId === id;
 
               return (
                 <Pressable
@@ -292,6 +348,7 @@ export default function BibliaScreen({ navigation }) {
                   style={[
                     styles.versiculoLinha,
                     selecionado && { backgroundColor: COLORS.glassFillElevated },
+                    destacado && { backgroundColor: accent.glow(0.3) },
                   ]}
                 >
                   <Text style={styles.versiculoNumero}>{String(v.numero).padStart(2, '0')}</Text>
@@ -310,10 +367,6 @@ export default function BibliaScreen({ navigation }) {
         )}
       </SafeAreaView>
 
-      {/* Fica FORA da SafeAreaView de propósito — pageX/pageY do toque são
-          relativos à tela inteira, então a origem de posicionamento aqui
-          precisa ser a mesma (a SafeAreaView desloca sua própria origem
-          pelo inset do topo e faria a conta bater errado). */}
       {versiculoSelecionadoId && menuPos && (
         <GlassSurface
           style={[

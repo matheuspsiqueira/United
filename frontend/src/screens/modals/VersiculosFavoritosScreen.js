@@ -91,6 +91,18 @@ export default function VersiculosFavoritosScreen({ navigation }) {
     }
   };
 
+  const abrirNaBiblia = (item) => {
+    navigation.navigate('Tabs', {
+      screen: 'Biblia',
+      params: {
+        versaoAlvo: item.versao,
+        livroSlugAlvo: item.livroSlug,
+        capituloAlvo: item.capitulo,
+        verseIdAlvo: item.verseId,
+      },
+    });
+  };
+
     useFocusEffect(
       useCallback(() => {
         if (Platform.OS !== 'android') return undefined;
@@ -130,7 +142,12 @@ export default function VersiculosFavoritosScreen({ navigation }) {
       ) : (
         <ScrollView contentContainerStyle={styles.lista}>
           {itens.map((item) => (
-            <View key={item.verseId} style={styles.card}>
+            <TouchableOpacity
+              key={item.verseId}
+              style={styles.card}
+              activeOpacity={0.8}
+              onPress={() => abrirNaBiblia(item)}
+            >
               <View style={[styles.corBarra, { backgroundColor: item.cor }]} />
               <View style={styles.cardConteudo}>
                 <Text style={styles.referencia}>
@@ -147,7 +164,7 @@ export default function VersiculosFavoritosScreen({ navigation }) {
               <TouchableOpacity onPress={() => remover(item.verseId)} style={styles.removerBtn}>
                 <Ionicons name="close-circle-outline" size={20} color={COLORS.textSecondary} />
               </TouchableOpacity>
-            </View>
+            </TouchableOpacity>
           ))}
         </ScrollView>
       )}

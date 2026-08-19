@@ -166,14 +166,15 @@ const CARD_WIDTH = 152;
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.background },
-  safeArea: { flex: 1, paddingHorizontal: 16 },
+  safeArea: { flex: 1 },
   header: {
     fontSize: 22,
     fontFamily: FONTS.displayBold,
     color: COLORS.textPrimary,
     marginVertical: 12,
+    marginHorizontal: 16,
   },
-  centro: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 12 },
+  centro: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 12, paddingHorizontal: 16 },
   erroTexto: { color: COLORS.textSecondary, fontFamily: FONTS.bodyRegular, textAlign: 'center' },
   retryBtn: {
     borderWidth: 1,
@@ -188,12 +189,13 @@ const styles = StyleSheet.create({
     fontFamily: FONTS.bodyRegular,
     textAlign: 'center',
     marginTop: 40,
+    marginHorizontal: 16,
   },
   secao: { marginBottom: 22 },
-  secaoHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 10, gap: 8 },
+  secaoHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 10, gap: 8, marginHorizontal: 16 },
   dot: { width: 8, height: 8, borderRadius: 4 },
   secaoTitulo: { fontSize: 15, fontFamily: FONTS.displaySemiBold, color: COLORS.textPrimary },
-  carrossel: { gap: 12, paddingRight: 4 },
+  carrossel: { gap: 10, paddingLeft: 16, paddingRight: 6 },
   cardWrapper: { width: CARD_WIDTH },
   card: { width: CARD_WIDTH },
   capa: { width: CARD_WIDTH, height: 170 },

@@ -75,7 +75,7 @@ export default function PerfilScreen({ navigation }) {
               <Ionicons name="information-circle-outline" size={18} color={accent.light} />
               <Text style={styles.voluntarioNoteText}>
                 Funcionalidades de voluntário (escala, check-in) aparecerão aqui
-                assim que sua participação for aprovada na Feira de Voluntários.
+                assim que sua participação for aprovada no Treinamento de Voluntários.
               </Text>
             </GlassSurface>
           )}

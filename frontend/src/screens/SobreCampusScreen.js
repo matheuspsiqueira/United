@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, Image, ScrollView, StyleSheet, TouchableOpacity, ActivityIndicator, Linking } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons, FontAwesome5 } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 
 import { COLORS, FONTS } from '../theme/colors';
@@ -12,10 +12,17 @@ import { useAuth } from '../contexts/AuthContext';
 const SCREEN_PADDING = 16;
 
 const REDE_SOCIAL_ICONS = {
-  instagram: 'logo-instagram',
-  youtube: 'logo-youtube',
-  spotify: 'logo-tiktok', // TODO: trocar quando @expo/vector-icons tiver ícone de Spotify nativo (usar Ionicons não tem; considerar react-native-vector-icons/FontAwesome5 "spotify")
+  instagram: { family: 'ionicons', name: 'logo-instagram' },
+  youtube: { family: 'ionicons', name: 'logo-youtube' },
+  spotify: { family: 'fa5', name: 'spotify' },
 };
+
+function IconeRedeSocial({ plataforma, size, color }) {
+  const icone = REDE_SOCIAL_ICONS[plataforma];
+  if (!icone) return <Ionicons name="link-outline" size={size} color={color} />;
+  if (icone.family === 'fa5') return <FontAwesome5 name={icone.name} size={size} color={color} />;
+  return <Ionicons name={icone.name} size={size} color={color} />;
+}
 
 export default function SobreCampusScreen({ route, navigation }) {
   const { usuario } = useAuth();
@@ -75,8 +82,7 @@ export default function SobreCampusScreen({ route, navigation }) {
 
       <SafeAreaView style={styles.container} edges={['left', 'right']}>
         <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
-          {/* Pastor(es) */}
-          <GlassSurface intensity={30} style={styles.pastorCard}>
+          <View style={styles.pastorSection}>
             <Text style={styles.pastorLabel}>{campus.tituloPastoral}</Text>
             <View style={styles.pastoresRow}>
               {campus.pastores.map((pastor) => (
@@ -85,16 +91,15 @@ export default function SobreCampusScreen({ route, navigation }) {
                     {pastor.foto ? (
                       <Image source={{ uri: pastor.foto }} style={styles.pastorAvatarImg} />
                     ) : (
-                      <Ionicons name="person" size={28} color={COLORS.textSecondary} />
+                      <Ionicons name="person" size={32} color={COLORS.textSecondary} />
                     )}
                   </View>
                   <Text style={styles.pastorNome}>{pastor.nome}</Text>
                 </View>
               ))}
             </View>
-          </GlassSurface>
+          </View>
 
-          {/* Endereço + fundação */}
           <GlassSurface intensity={25} style={[styles.infoCard, { borderLeftColor: accent.base }]}>
             <View style={styles.infoRow}>
               <Ionicons name="location-outline" size={18} color={accent.light} />
@@ -106,7 +111,6 @@ export default function SobreCampusScreen({ route, navigation }) {
             </View>
           </GlassSurface>
 
-          {/* Descrição histórica */}
           {!!campus.descricao && (
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>Nossa história</Text>
@@ -116,7 +120,6 @@ export default function SobreCampusScreen({ route, navigation }) {
             </View>
           )}
 
-          {/* Horários */}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Horários de culto</Text>
             <GlassSurface intensity={25} style={styles.horariosCard}>
@@ -138,7 +141,6 @@ export default function SobreCampusScreen({ route, navigation }) {
             </GlassSurface>
           </View>
 
-          {/* Redes sociais */}
           {campus.redesSociais?.length > 0 && (
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>Redes sociais</Text>
@@ -146,11 +148,7 @@ export default function SobreCampusScreen({ route, navigation }) {
                 {campus.redesSociais.map((r) => (
                   <TouchableOpacity key={r.plataforma} onPress={() => Linking.openURL(r.url)}>
                     <GlassSurface intensity={25} style={styles.redeItem}>
-                      <Ionicons
-                        name={REDE_SOCIAL_ICONS[r.plataforma] || 'link-outline'}
-                        size={22}
-                        color={accent.light}
-                      />
+                      <IconeRedeSocial plataforma={r.plataforma} size={22} color={accent.light} />
                     </GlassSurface>
                   </TouchableOpacity>
                 ))}
@@ -173,28 +171,29 @@ const styles = StyleSheet.create({
 
   content: { padding: SCREEN_PADDING, paddingBottom: 140 },
 
-  pastorCard: { alignItems: 'center', paddingVertical: 20, paddingHorizontal: 16 },
+  pastorSection: { alignItems: 'center', paddingVertical: 20 },
   pastorLabel: {
     fontSize: 11,
     fontFamily: FONTS.mono,
     letterSpacing: 1,
     color: COLORS.textSecondary,
-    marginBottom: 12,
+    marginBottom: 14,
+    textTransform: 'uppercase',
   },
   pastoresRow: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center' },
-  pastorItem: { alignItems: 'center', marginHorizontal: 10, marginBottom: 8 },
+  pastorItem: { alignItems: 'center', marginHorizontal: 12, marginBottom: 10 },
   pastorAvatar: {
-    width: 76, height: 76, borderRadius: 38, borderWidth: 2,
+    width: 88, height: 88, borderRadius: 44, borderWidth: 2,
     justifyContent: 'center', alignItems: 'center',
-    backgroundColor: COLORS.surfaceElevated, overflow: 'hidden',
+    backgroundColor: COLORS.glassFill, overflow: 'hidden',
   },
   pastorAvatarImg: { width: '100%', height: '100%' },
   pastorNome: {
     fontSize: 13, fontFamily: FONTS.bodySemiBold, color: COLORS.textPrimary,
-    marginTop: 8, textAlign: 'center', maxWidth: 110,
+    marginTop: 10, textAlign: 'center', maxWidth: 110,
   },
 
-  infoCard: { marginTop: 16, borderLeftWidth: 3, padding: 16 },
+  infoCard: { marginTop: 6, borderLeftWidth: 3, padding: 16 },
   infoRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 10 },
   infoText: { fontSize: 13, fontFamily: FONTS.bodyRegular, color: COLORS.textPrimary, marginLeft: 10, flex: 1 },
 
@@ -223,8 +222,4 @@ const styles = StyleSheet.create({
 
   redesRow: { flexDirection: 'row', gap: 12 },
   redeItem: { width: 52, height: 52, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
-
-  explorarGrid: { flexDirection: 'row', justifyContent: 'space-between', gap: 12 },
-  explorarItem: { flex: 1, paddingVertical: 18, alignItems: 'center' },
-  explorarLabel: { marginTop: 8, fontSize: 13, fontFamily: FONTS.bodySemiBold, color: COLORS.textPrimary },
 });
