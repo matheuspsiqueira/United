@@ -29,6 +29,8 @@ INSTALLED_APPS = [
     'usuarios',
     'conteudo',
     'series',
+    'departamentos',
+    'dashboard',
 ]
 
 MIDDLEWARE = [
@@ -57,6 +59,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'dashboard.context_processors.escopo_processor',
             ],
         },
     },
@@ -100,7 +103,9 @@ USE_TZ = True
 
 
 AUTH_USER_MODEL = 'usuarios.Usuario'
-
+LOGIN_URL = 'dashboard:login'
+LOGIN_REDIRECT_URL = 'dashboard:home'
+LOGOUT_REDIRECT_URL = 'dashboard:login'
 
 
 MEDIA_URL = '/media/'

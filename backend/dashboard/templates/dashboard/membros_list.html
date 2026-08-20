@@ -1,0 +1,65 @@
+{% extends 'dashboard/base.html' %}
+
+{% block page_title %}Membros{% endblock %}
+
+{% block content %}
+<form class="filters-row" method="get">
+  <input type="text" name="q" placeholder="Buscar por nome" value="{{ busca }}">
+  {% if campi %}
+    <select name="campus" onchange="this.form.submit()">
+      <option value="">Todos os campi</option>
+      {% for c in campi %}
+        <option value="{{ c.id }}" {% if campus_selecionado == c.id|stringformat:"s" %}selected{% endif %}>{{ c.nome }}</option>
+      {% endfor %}
+    </select>
+  {% endif %}
+</form>
+
+<div class="table-wrap">
+  <table class="data-table">
+    <thead>
+      <tr>
+        <th>Nome</th>
+        <th>Usuário</th>
+        <th>Campus</th>
+        <th>Papel</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for membro in membros %}
+        <tr>
+          <td>
+            <div class="row-user">
+              <div class="avatar">
+                {% if membro.foto_perfil %}
+                  <img src="{{ membro.foto_perfil.url }}" alt="{{ membro.nome_completo }}">
+                {% else %}
+                  {{ membro.nome_completo|slice:":2"|upper }}
+                {% endif %}
+              </div>
+              {{ membro.nome_completo }}
+            </div>
+          </td>
+          <td class="mono">{{ membro.username }}</td>
+          <td>{{ membro.campus.nome|default:"—" }}</td>
+          <td>{% if membro.role == 'voluntario' %}Voluntário{% else %}Membro{% endif %}</td>
+        </tr>
+      {% empty %}
+        <tr><td colspan="4">Nenhum membro encontrado.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  {% if is_paginated %}
+    <div class="pagination">
+      {% if page_obj.has_previous %}
+        <a href="?page={{ page_obj.previous_page_number }}{% if busca %}&q={{ busca }}{% endif %}{% if campus_selecionado %}&campus={{ campus_selecionado }}{% endif %}">‹</a>
+      {% endif %}
+      <span class="current">{{ page_obj.number }} / {{ page_obj.paginator.num_pages }}</span>
+      {% if page_obj.has_next %}
+        <a href="?page={{ page_obj.next_page_number }}{% if busca %}&q={{ busca }}{% endif %}{% if campus_selecionado %}&campus={{ campus_selecionado }}{% endif %}">›</a>
+      {% endif %}
+    </div>
+  {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,45 @@
+{% extends 'dashboard/base.html' %}
+
+{% block page_title %}Início{% endblock %}
+
+{% block content %}
+<div class="metrics-grid">
+  {% if escopo.nivel == 'fundador' %}
+    <div class="metric-card accented">
+      <div class="metric-label">Membros — todos os campi</div>
+      <div class="metric-value">{{ total_membros }}</div>
+      <div class="metric-breakdown">
+        {% for item in breakdown_campus %}
+          <div class="row"><span>{{ item.campus__nome }}</span><span class="v">{{ item.total }}</span></div>
+        {% endfor %}
+      </div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-label">Voluntários — todos os campi</div>
+      <div class="metric-value">{{ total_voluntarios }}</div>
+    </div>
+
+  {% elif escopo.nivel == 'pastor_presidente' %}
+    <div class="metric-card accented">
+      <div class="metric-label">Membros — {{ escopo.campus.nome }}</div>
+      <div class="metric-value">{{ total_membros }}</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-label">Voluntários — {{ escopo.campus.nome }}</div>
+      <div class="metric-value">{{ total_voluntarios }}</div>
+    </div>
+
+  {% elif escopo.nivel == 'lider' %}
+    <div class="metric-card accented">
+      <div class="metric-label">
+        {% if escopo.visao_geral_voluntarios %}Voluntários — todos os departamentos{% else %}Voluntários — seu time{% endif %}
+      </div>
+      <div class="metric-value">{{ total_voluntarios }}</div>
+    </div>
+  {% endif %}
+</div>
+
+<div class="empty-note">
+  Fila de aprovação e os módulos de conteúdo entram nas próximas sessões.
+</div>
+{% endblock %}

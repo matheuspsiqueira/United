@@ -16,11 +16,9 @@ def gerar_senha_provisoria(tamanho=8):
 
 
 class UsuarioCreationForm(forms.ModelForm):
-    """Form de criação sem campos de senha — ela é gerada automaticamente no save()."""
-
     class Meta:
         model = Usuario
-        fields = ('username', 'nome_completo', 'email', 'campus', 'role')
+        fields = ('username', 'nome_completo', 'email', 'campus', 'role', 'nivel_acesso')
         field_classes = {'username': UsernameField}
 
     def save(self, commit=True):
@@ -42,19 +40,20 @@ class UsuarioAdmin(UserAdmin):
     add_fieldsets = (
         (None, {
             'classes': ('wide',),
-            'fields': ('username', 'nome_completo', 'email', 'campus', 'role'),
+            'fields': ('username', 'nome_completo', 'email', 'campus', 'role', 'nivel_acesso'),
         }),
     )
 
     fieldsets = (
         (None, {'fields': ('username', 'password')}),
         ('Dados pessoais', {'fields': ('nome_completo', 'email', 'foto_perfil', 'campus', 'role')}),
+        ('Acesso à dashboard', {'fields': ('nivel_acesso',)}),
         ('Status', {'fields': ('senha_temporaria', 'is_active', 'is_staff', 'is_superuser', 'groups', 'user_permissions')}),
         ('Datas', {'fields': ('last_login', 'date_joined')}),
     )
 
-    list_display = ('username', 'nome_completo', 'campus', 'role', 'senha_temporaria', 'is_active')
-    list_filter = ('role', 'campus', 'senha_temporaria', 'is_active')
+    list_display = ('username', 'nome_completo', 'campus', 'role', 'nivel_acesso', 'senha_temporaria', 'is_active')
+    list_filter = ('role', 'nivel_acesso', 'campus', 'senha_temporaria', 'is_active')
     search_fields = ('username', 'nome_completo', 'email')
 
     actions = ['resetar_senha_provisoria']
@@ -73,8 +72,6 @@ class UsuarioAdmin(UserAdmin):
             )
 
     def resetar_senha_provisoria(self, request, queryset):
-        """Ação em massa: gera uma nova senha provisória pra usuários selecionados
-        (útil se a pessoa perdeu a senha antes de trocar)."""
         senhas = []
         for usuario in queryset:
             nova_senha = gerar_senha_provisoria()
@@ -89,7 +86,8 @@ class UsuarioAdmin(UserAdmin):
 
 @admin.register(VoluntarioPerfil)
 class VoluntarioPerfilAdmin(admin.ModelAdmin):
-    list_display = ('usuario', 'data_aprovacao')
+    list_display = ('usuario', 'data_aprovacao', 'departamento')
+    list_filter = ('departamento',)
 
 
 @admin.register(VersiculoFavorito)

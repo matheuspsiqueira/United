@@ -1,0 +1,96 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{% block title %}United — Dashboard{% endblock %}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{% static 'dashboard/css/tokens.css' %}">
+  <link rel="stylesheet" href="{% static 'dashboard/css/base.css' %}">
+  {% block extra_css %}{% endblock %}
+</head>
+<body{% if escopo.campus %} style="--accent: {{ escopo.campus.cor_tema }}; --accent-glow: {{ escopo.campus.cor_tema }}29;"{% endif %}>
+
+<div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+<aside class="sidebar" id="sidebar">
+  <div class="brand">
+    <div class="brand-mark">United</div>
+    <div class="brand-sub">Dashboard admin</div>
+  </div>
+
+  <div class="scope-badge">
+    <div class="scope-dot"></div>
+    <div>
+      <div class="scope-label">{% if escopo.campus %}{{ escopo.campus.nome }}{% else %}Todos os campi{% endif %}</div>
+      <div class="scope-name">{{ escopo.label }}</div>
+    </div>
+  </div>
+
+  <nav>
+    <div class="nav-section-label">Visão geral</div>
+    <a class="nav-item {% if request.resolver_match.url_name == 'home' %}active{% endif %}" href="{% url 'dashboard:home' %}">Início</a>
+    <span class="nav-item disabled">Fila de aprovação <span class="soon">em breve</span></span>
+
+    <div class="nav-section-label">Conteúdo</div>
+    <span class="nav-item disabled">Séries <span class="soon">em breve</span></span>
+    <span class="nav-item disabled">Notícias <span class="soon">em breve</span></span>
+    <span class="nav-item disabled">Eventos <span class="soon">em breve</span></span>
+    <span class="nav-item disabled">Projetos <span class="soon">em breve</span></span>
+
+    <div class="nav-section-label">Pessoas</div>
+    {% if escopo.nivel == 'fundador' or escopo.nivel == 'pastor_presidente' %}
+      <a class="nav-item {% if request.resolver_match.url_name == 'membros' %}active{% endif %}" href="{% url 'dashboard:membros' %}">Membros</a>
+    {% else %}
+      <span class="nav-item disabled">Membros <span class="soon">sem acesso</span></span>
+    {% endif %}
+    <a class="nav-item {% if request.resolver_match.url_name == 'voluntarios' %}active{% endif %}" href="{% url 'dashboard:voluntarios' %}">Voluntários</a>
+  </nav>
+
+  <div class="sidebar-footer">
+    <div class="avatar">
+      {% if request.user.foto_perfil %}
+        <img src="{{ request.user.foto_perfil.url }}" alt="{{ request.user.nome_completo }}">
+      {% else %}
+        {{ request.user.nome_completo|slice:":2"|upper }}
+      {% endif %}
+    </div>
+    <div>
+      <div class="user-name">{{ request.user.nome_completo }}</div>
+      <div class="user-role">{{ escopo.label }}</div>
+    </div>
+    <form class="logout-form" method="post" action="{% url 'dashboard:logout' %}">
+      {% csrf_token %}
+      <button class="logout-btn" type="submit">Sair</button>
+    </form>
+  </div>
+</aside>
+
+<div class="main">
+  <div class="topbar">
+    <button class="hamburger" id="sidebarToggle">☰</button>
+    <h1>{% block page_title %}Início{% endblock %}</h1>
+  </div>
+  <div class="content">
+    {% block content %}{% endblock %}
+  </div>
+</div>
+
+<script>
+  const sidebar = document.getElementById('sidebar');
+  const overlay = document.getElementById('sidebarOverlay');
+  const toggle = document.getElementById('sidebarToggle');
+
+  function openSidebar() { sidebar.classList.add('open'); overlay.classList.add('show'); }
+  function closeSidebar() { sidebar.classList.remove('open'); overlay.classList.remove('show'); }
+
+  toggle.addEventListener('click', () => {
+    sidebar.classList.contains('open') ? closeSidebar() : openSidebar();
+  });
+  overlay.addEventListener('click', closeSidebar);
+</script>
+
+</body>
+</html>

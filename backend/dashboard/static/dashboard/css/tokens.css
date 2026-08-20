@@ -1,0 +1,25 @@
+:root {
+  --bg: #0B0D12;
+  --sidebar-bg: #0E1116;
+  --surface: #161922;
+  --surface-elevated: #1F2430;
+  --text-primary: #F5F6F8;
+  --text-secondary: #9099AC;
+  --border: #252A38;
+  --danger: #E5484D;
+  --success: #2D9D5F;
+  --accent: #6D7688;
+  --accent-glow: rgba(109, 118, 136, 0.16);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: var(--bg);
+  color: var(--text-primary);
+  font-family: 'Inter', -apple-system, sans-serif;
+  font-size: 14px;
+}
+
+h1, h2, h3 { font-family: 'Sora', sans-serif; }
+.mono { font-family: 'JetBrains Mono', monospace; }
