@@ -3,6 +3,13 @@
 {% block page_title %}Membros{% endblock %}
 
 {% block content %}
+{% if escopo.pode_aprovar_membros %}
+<div class="tabs">
+  <a class="tab active" href="{% url 'dashboard:membros' %}">Ativos</a>
+  <a class="tab" href="{% url 'dashboard:membros_pendentes' %}">Pendentes</a>
+</div>
+{% endif %}
+
 <form class="filters-row" method="get">
   <input type="text" name="q" placeholder="Buscar por nome" value="{{ busca }}">
   {% if campi %}
@@ -37,7 +44,7 @@
                   {{ membro.nome_completo|slice:":2"|upper }}
                 {% endif %}
               </div>
-              {{ membro.nome_completo }}
+              <a href="{% url 'dashboard:usuario_detalhe' membro.pk %}" data-modal-url="{% url 'dashboard:usuario_detalhe' membro.pk %}">{{ membro.nome_completo }}</a>
             </div>
           </td>
           <td class="mono">{{ membro.username }}</td>
@@ -52,13 +59,9 @@
 
   {% if is_paginated %}
     <div class="pagination">
-      {% if page_obj.has_previous %}
-        <a href="?page={{ page_obj.previous_page_number }}{% if busca %}&q={{ busca }}{% endif %}{% if campus_selecionado %}&campus={{ campus_selecionado }}{% endif %}">‹</a>
-      {% endif %}
+      {% if page_obj.has_previous %}<a href="?page={{ page_obj.previous_page_number }}">‹</a>{% endif %}
       <span class="current">{{ page_obj.number }} / {{ page_obj.paginator.num_pages }}</span>
-      {% if page_obj.has_next %}
-        <a href="?page={{ page_obj.next_page_number }}{% if busca %}&q={{ busca }}{% endif %}{% if campus_selecionado %}&campus={{ campus_selecionado }}{% endif %}">›</a>
-      {% endif %}
+      {% if page_obj.has_next %}<a href="?page={{ page_obj.next_page_number }}">›</a>{% endif %}
     </div>
   {% endif %}
 </div>

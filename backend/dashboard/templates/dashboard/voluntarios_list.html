@@ -46,7 +46,7 @@
                   {{ voluntario.nome_completo|slice:":2"|upper }}
                 {% endif %}
               </div>
-              {{ voluntario.nome_completo }}
+              <a href="{% url 'dashboard:usuario_detalhe' voluntario.pk %}" data-modal-url="{% url 'dashboard:usuario_detalhe' voluntario.pk %}">{{ voluntario.nome_completo }}</a>
             </div>
           </td>
           <td>{{ voluntario.campus.nome|default:"—" }}</td>

@@ -54,3 +54,24 @@ class VersiculoFavorito(models.Model):
 
     def __str__(self):
         return f'{self.usuario.nome_completo} — {self.verse_id}'
+
+
+class CadastroPendente(models.Model):
+    STATUS_CHOICES = [
+        ('pendente', 'Pendente'),
+        ('aprovado', 'Aprovado'),
+        ('recusado', 'Recusado'),
+    ]
+
+    nome_completo = models.CharField(max_length=150)
+    idade = models.PositiveIntegerField(blank=True, null=True)
+    telefone = models.CharField(max_length=20, blank=True)
+    campus = models.ForeignKey(Campus, related_name='cadastros_pendentes', on_delete=models.CASCADE)
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='pendente')
+    usuario_criado = models.ForeignKey(
+        Usuario, related_name='cadastro_origem', on_delete=models.SET_NULL, null=True, blank=True,
+    )
+    criado_em = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f'{self.nome_completo} — {self.get_status_display()}'

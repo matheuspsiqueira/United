@@ -1,18 +1,11 @@
-import secrets
-import string
-
 from django import forms
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 from django.contrib.auth.forms import UsernameField
 from django.utils.html import format_html
 
-from .models import Usuario, VoluntarioPerfil, VersiculoFavorito
-
-
-def gerar_senha_provisoria(tamanho=8):
-    alfabeto = string.ascii_uppercase + string.ascii_lowercase + string.digits
-    return ''.join(secrets.choice(alfabeto) for _ in range(tamanho))
+from .models import Usuario, VoluntarioPerfil, VersiculoFavorito, CadastroPendente
+from .utils import gerar_senha_provisoria
 
 
 class UsuarioCreationForm(forms.ModelForm):
@@ -93,3 +86,9 @@ class VoluntarioPerfilAdmin(admin.ModelAdmin):
 @admin.register(VersiculoFavorito)
 class VersiculoFavoritoAdmin(admin.ModelAdmin):
     list_display = ('usuario', 'verse_id', 'cor')
+
+
+@admin.register(CadastroPendente)
+class CadastroPendenteAdmin(admin.ModelAdmin):
+    list_display = ('nome_completo', 'campus', 'status', 'criado_em')
+    list_filter = ('status', 'campus')

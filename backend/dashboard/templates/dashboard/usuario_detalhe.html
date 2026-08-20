@@ -1,0 +1,5 @@
+{% extends 'dashboard/base.html' %}
+{% block page_title %}{{ usuario_alvo.nome_completo }}{% endblock %}
+{% block content %}
+  {% include 'dashboard/partials/usuario_modal.html' %}
+{% endblock %}

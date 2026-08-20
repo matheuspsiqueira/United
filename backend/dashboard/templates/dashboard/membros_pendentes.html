@@ -1,0 +1,37 @@
+{% extends 'dashboard/base.html' %}
+
+{% block page_title %}Membros — pendentes{% endblock %}
+
+{% block content %}
+<div class="tabs">
+  <a class="tab" href="{% url 'dashboard:membros' %}">Ativos</a>
+  <a class="tab active" href="{% url 'dashboard:membros_pendentes' %}">Pendentes</a>
+</div>
+
+<div class="table-wrap">
+  <table class="data-table">
+    <thead>
+      <tr><th>Nome</th><th>Idade</th><th>Telefone</th><th>Campus</th><th>Enviado em</th><th></th></tr>
+    </thead>
+    <tbody>
+      {% for cadastro in cadastros %}
+        <tr>
+          <td>{{ cadastro.nome_completo }}</td>
+          <td>{{ cadastro.idade|default:"—" }}</td>
+          <td class="mono">{{ cadastro.telefone|default:"—" }}</td>
+          <td>{{ cadastro.campus.nome }}</td>
+          <td class="mono">{{ cadastro.criado_em|date:"d/m/Y" }}</td>
+          <td>
+            <form method="post" action="{% url 'dashboard:cadastro_aprovar' cadastro.pk %}">
+              {% csrf_token %}
+              <button type="submit" class="approve-btn">Aprovar</button>
+            </form>
+          </td>
+        </tr>
+      {% empty %}
+        <tr><td colspan="6">Nenhum cadastro pendente.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

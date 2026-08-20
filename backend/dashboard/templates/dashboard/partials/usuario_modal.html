@@ -1,0 +1,37 @@
+<div class="modal-card">
+  <div class="modal-header">
+    <h3>{{ usuario_alvo.nome_completo }}</h3>
+    <button type="button" data-modal-close class="modal-close">✕</button>
+  </div>
+
+  <div class="modal-body">
+    {% if pode_editar %}
+      <form method="post" action="{% url 'dashboard:usuario_detalhe' usuario_alvo.pk %}">
+        {% csrf_token %}
+        <label>Nome completo</label>
+        <input type="text" name="nome_completo" value="{{ usuario_alvo.nome_completo }}">
+        <label>E-mail</label>
+        <input type="email" name="email" value="{{ usuario_alvo.email }}">
+        {% if campi %}
+          <label>Campus</label>
+          <select name="campus">
+            {% for c in campi %}
+              <option value="{{ c.id }}" {% if c.id == usuario_alvo.campus_id %}selected{% endif %}>{{ c.nome }}</option>
+            {% endfor %}
+          </select>
+        {% endif %}
+        <div class="detail-row"><span>Usuário</span><strong class="mono">{{ usuario_alvo.username }}</strong></div>
+        <div class="modal-footer">
+          <button type="submit" class="submit">Salvar</button>
+        </div>
+      </form>
+    {% else %}
+      <div class="detail-row"><span>Usuário</span><strong class="mono">{{ usuario_alvo.username }}</strong></div>
+      <div class="detail-row"><span>E-mail</span><strong>{{ usuario_alvo.email|default:"—" }}</strong></div>
+      <div class="detail-row"><span>Campus</span><strong>{{ usuario_alvo.campus.nome|default:"—" }}</strong></div>
+      {% if usuario_alvo.role == 'voluntario' %}
+        <div class="detail-row"><span>Departamento</span><strong>{{ usuario_alvo.voluntarioperfil.departamento.nome|default:"—" }}</strong></div>
+      {% endif %}
+    {% endif %}
+  </div>
+</div>

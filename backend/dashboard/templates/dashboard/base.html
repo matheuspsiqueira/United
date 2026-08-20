@@ -32,7 +32,11 @@
   <nav>
     <div class="nav-section-label">Visão geral</div>
     <a class="nav-item {% if request.resolver_match.url_name == 'home' %}active{% endif %}" href="{% url 'dashboard:home' %}">Início</a>
-    <span class="nav-item disabled">Fila de aprovação <span class="soon">em breve</span></span>
+    {% if escopo.pode_aprovar_membros %}
+      <a class="nav-item {% if request.resolver_match.url_name == 'membros_pendentes' %}active{% endif %}" href="{% url 'dashboard:membros_pendentes' %}">Fila de aprovação</a>
+    {% else %}
+      <span class="nav-item disabled">Fila de aprovação <span class="soon">sem acesso</span></span>
+    {% endif %}
 
     <div class="nav-section-label">Conteúdo</div>
     <span class="nav-item disabled">Séries <span class="soon">em breve</span></span>
@@ -41,7 +45,7 @@
     <span class="nav-item disabled">Projetos <span class="soon">em breve</span></span>
 
     <div class="nav-section-label">Pessoas</div>
-    {% if escopo.nivel == 'fundador' or escopo.nivel == 'pastor_presidente' %}
+    {% if escopo.nivel == 'fundador' or escopo.nivel == 'pastor_presidente' or escopo.pode_aprovar_membros %}
       <a class="nav-item {% if request.resolver_match.url_name == 'membros' %}active{% endif %}" href="{% url 'dashboard:membros' %}">Membros</a>
     {% else %}
       <span class="nav-item disabled">Membros <span class="soon">sem acesso</span></span>
@@ -74,22 +78,64 @@
     <h1>{% block page_title %}Início{% endblock %}</h1>
   </div>
   <div class="content">
+    {% if messages %}
+      <div class="messages">
+        {% for message in messages %}
+          <div class="message {{ message.tags }}">{{ message }}</div>
+        {% endfor %}
+      </div>
+    {% endif %}
     {% block content %}{% endblock %}
   </div>
 </div>
 
+<div class="modal-overlay" id="modalOverlay"></div>
+<div class="modal-root" id="modalRoot"></div>
+
 <script>
   const sidebar = document.getElementById('sidebar');
-  const overlay = document.getElementById('sidebarOverlay');
+  const sideOverlay = document.getElementById('sidebarOverlay');
   const toggle = document.getElementById('sidebarToggle');
 
-  function openSidebar() { sidebar.classList.add('open'); overlay.classList.add('show'); }
-  function closeSidebar() { sidebar.classList.remove('open'); overlay.classList.remove('show'); }
+  function openSidebar() { sidebar.classList.add('open'); sideOverlay.classList.add('show'); }
+  function closeSidebar() { sidebar.classList.remove('open'); sideOverlay.classList.remove('show'); }
 
   toggle.addEventListener('click', () => {
     sidebar.classList.contains('open') ? closeSidebar() : openSidebar();
   });
-  overlay.addEventListener('click', closeSidebar);
+  sideOverlay.addEventListener('click', closeSidebar);
+
+  const modalOverlay = document.getElementById('modalOverlay');
+  const modalRoot = document.getElementById('modalRoot');
+
+  function abrirModal(url) {
+    fetch(url, { headers: { 'X-Requested-With': 'fetch' } })
+      .then(r => r.text())
+      .then(html => {
+        modalRoot.innerHTML = html;
+        modalOverlay.classList.add('show');
+        modalRoot.classList.add('show');
+      });
+  }
+
+  function fecharModal() {
+    modalOverlay.classList.remove('show');
+    modalRoot.classList.remove('show');
+    modalRoot.innerHTML = '';
+  }
+
+  modalOverlay.addEventListener('click', fecharModal);
+
+  document.addEventListener('click', (e) => {
+    const gatilho = e.target.closest('[data-modal-url]');
+    if (gatilho) {
+      e.preventDefault();
+      abrirModal(gatilho.dataset.modalUrl);
+    }
+    if (e.target.closest('[data-modal-close]')) {
+      fecharModal();
+    }
+  });
 </script>
 
 </body>
