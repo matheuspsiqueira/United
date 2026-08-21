@@ -2,8 +2,10 @@ from django import forms
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 from django.contrib.auth.forms import UsernameField
+from django.utils import timezone
 from django.utils.html import format_html
 
+from departamentos.models import Departamento
 from .models import Usuario, VoluntarioPerfil, VersiculoFavorito, CadastroPendente
 from .utils import gerar_senha_provisoria
 
@@ -25,9 +27,47 @@ class UsuarioCreationForm(forms.ModelForm):
         return usuario
 
 
+class UsuarioChangeForm(forms.ModelForm):
+    departamentos_liderados = forms.ModelMultipleChoiceField(
+        queryset=Departamento.objects.select_related('campus').order_by('campus__nome', 'nome'),
+        required=False,
+        widget=admin.widgets.FilteredSelectMultiple('departamentos liderados', False),
+    )
+
+    class Meta:
+        model = Usuario
+        fields = '__all__'
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if self.instance.pk:
+            self.fields['departamentos_liderados'].initial = self.instance.departamentos_liderados.all()
+
+    def save(self, commit=True):
+        usuario = super().save(commit)
+        if usuario.pk:
+            usuario.departamentos_liderados.set(self.cleaned_data['departamentos_liderados'])
+        return usuario
+
+
+class VoluntarioPerfilInline(admin.StackedInline):
+    model = VoluntarioPerfil
+    extra = 0
+    max_num = 1
+    verbose_name = 'Perfil de voluntário'
+    verbose_name_plural = 'Perfil de voluntário'
+    fields = ('departamento', 'data_aprovacao')
+
+    def get_formset(self, request, obj=None, **kwargs):
+        formset = super().get_formset(request, obj, **kwargs)
+        formset.form.base_fields['data_aprovacao'].initial = timezone.now().date()
+        return formset
+
+
 @admin.register(Usuario)
 class UsuarioAdmin(UserAdmin):
     add_form = UsuarioCreationForm
+    form = UsuarioChangeForm
     model = Usuario
 
     add_fieldsets = (
@@ -40,16 +80,36 @@ class UsuarioAdmin(UserAdmin):
     fieldsets = (
         (None, {'fields': ('username', 'password')}),
         ('Dados pessoais', {'fields': ('nome_completo', 'email', 'foto_perfil', 'campus', 'role')}),
-        ('Acesso à dashboard', {'fields': ('nivel_acesso',)}),
+        ('Acesso à dashboard', {'fields': ('nivel_acesso', 'departamentos_liderados')}),
         ('Status', {'fields': ('senha_temporaria', 'is_active', 'is_staff', 'is_superuser', 'groups', 'user_permissions')}),
         ('Datas', {'fields': ('last_login', 'date_joined')}),
     )
 
-    list_display = ('username', 'nome_completo', 'campus', 'role', 'nivel_acesso', 'senha_temporaria', 'is_active')
+    filter_horizontal = ('groups', 'user_permissions')
+
+    list_display = (
+        'username', 'nome_completo', 'campus', 'role', 'nivel_acesso',
+        'departamento_voluntario', 'senha_temporaria', 'is_active',
+    )
     list_filter = ('role', 'nivel_acesso', 'campus', 'senha_temporaria', 'is_active')
     search_fields = ('username', 'nome_completo', 'email')
 
     actions = ['resetar_senha_provisoria']
+
+    def get_form(self, request, obj=None, **kwargs):
+        if obj is None:
+            return super().get_form(request, obj, **kwargs)
+        return super().get_form(request, obj, form=UsuarioChangeForm, **kwargs)
+
+    def get_inlines(self, request, obj):
+        if obj and obj.role == 'voluntario':
+            return [VoluntarioPerfilInline]
+        return []
+
+    def departamento_voluntario(self, obj):
+        perfil = getattr(obj, 'voluntarioperfil', None)
+        return perfil.departamento if perfil and perfil.departamento else '—'
+    departamento_voluntario.short_description = 'Departamento (voluntário)'
 
     def save_model(self, request, obj, form, change):
         super().save_model(request, obj, form, change)

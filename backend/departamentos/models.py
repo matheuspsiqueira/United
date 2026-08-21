@@ -13,6 +13,7 @@ class Departamento(models.Model):
     acesso_dashboard = models.BooleanField(default=False)
     visao_geral_voluntarios = models.BooleanField(default=False)
     aprova_membros = models.BooleanField(default=False)
+    edita_membros = models.BooleanField(default=False)
 
     class Meta:
         unique_together = ('campus', 'nome')

@@ -7,14 +7,17 @@ from .services import get_escopo
 class DashboardAccessMixin(LoginRequiredMixin, UserPassesTestMixin):
     login_url = 'dashboard:login'
     niveis_permitidos = None
+    secao = None
 
     def test_func(self):
-        nivel = self.request.user.nivel_acesso
-        if not nivel:
+        escopo = self.escopo
+        if not escopo['acesso_dashboard']:
             return False
-        if self.niveis_permitidos is None:
-            return True
-        return nivel in self.niveis_permitidos
+        if self.niveis_permitidos is not None and escopo['nivel'] not in self.niveis_permitidos:
+            return False
+        if self.secao is not None and self.secao not in escopo['secoes_visiveis']:
+            return False
+        return True
 
     def handle_no_permission(self):
         if not self.request.user.is_authenticated:

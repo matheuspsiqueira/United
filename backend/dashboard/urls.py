@@ -13,4 +13,5 @@ urlpatterns = [
     path('membros/pendentes/<int:pk>/aprovar/', views.CadastroPendenteAprovarView.as_view(), name='cadastro_aprovar'),
     path('voluntarios/', views.VoluntariosListView.as_view(), name='voluntarios'),
     path('usuarios/<int:pk>/', views.UsuarioDetalheView.as_view(), name='usuario_detalhe'),
+    path('usuarios/<int:pk>/resetar-senha/', views.UsuarioResetarSenhaView.as_view(), name='usuario_resetar_senha'),
 ]

@@ -30,12 +30,14 @@
   </div>
 
   <nav>
-    <div class="nav-section-label">Visão geral</div>
-    <a class="nav-item {% if request.resolver_match.url_name == 'home' %}active{% endif %}" href="{% url 'dashboard:home' %}">Início</a>
-    {% if escopo.pode_aprovar_membros %}
-      <a class="nav-item {% if request.resolver_match.url_name == 'membros_pendentes' %}active{% endif %}" href="{% url 'dashboard:membros_pendentes' %}">Fila de aprovação</a>
-    {% else %}
-      <span class="nav-item disabled">Fila de aprovação <span class="soon">sem acesso</span></span>
+    {% if 'home' in escopo.secoes_visiveis or 'membros_pendentes' in escopo.secoes_visiveis %}
+      <div class="nav-section-label">Visão geral</div>
+      {% if 'home' in escopo.secoes_visiveis %}
+        <a class="nav-item {% if request.resolver_match.url_name == 'home' %}active{% endif %}" href="{% url 'dashboard:home' %}">Início</a>
+      {% endif %}
+      {% if 'membros_pendentes' in escopo.secoes_visiveis %}
+        <a class="nav-item {% if request.resolver_match.url_name == 'membros_pendentes' %}active{% endif %}" href="{% url 'dashboard:membros_pendentes' %}">Fila de aprovação</a>
+      {% endif %}
     {% endif %}
 
     <div class="nav-section-label">Conteúdo</div>
@@ -44,13 +46,15 @@
     <span class="nav-item disabled">Eventos <span class="soon">em breve</span></span>
     <span class="nav-item disabled">Projetos <span class="soon">em breve</span></span>
 
-    <div class="nav-section-label">Pessoas</div>
-    {% if escopo.nivel == 'fundador' or escopo.nivel == 'pastor_presidente' or escopo.pode_aprovar_membros %}
-      <a class="nav-item {% if request.resolver_match.url_name == 'membros' %}active{% endif %}" href="{% url 'dashboard:membros' %}">Membros</a>
-    {% else %}
-      <span class="nav-item disabled">Membros <span class="soon">sem acesso</span></span>
+    {% if 'membros' in escopo.secoes_visiveis or 'voluntarios' in escopo.secoes_visiveis %}
+      <div class="nav-section-label">Pessoas</div>
+      {% if 'membros' in escopo.secoes_visiveis %}
+        <a class="nav-item {% if request.resolver_match.url_name == 'membros' %}active{% endif %}" href="{% url 'dashboard:membros' %}">Membros</a>
+      {% endif %}
+      {% if 'voluntarios' in escopo.secoes_visiveis %}
+        <a class="nav-item {% if request.resolver_match.url_name == 'voluntarios' %}active{% endif %}" href="{% url 'dashboard:voluntarios' %}">Voluntários</a>
+      {% endif %}
     {% endif %}
-    <a class="nav-item {% if request.resolver_match.url_name == 'voluntarios' %}active{% endif %}" href="{% url 'dashboard:voluntarios' %}">Voluntários</a>
   </nav>
 
   <div class="sidebar-footer">
@@ -76,6 +80,7 @@
   <div class="topbar">
     <button class="hamburger" id="sidebarToggle">☰</button>
     <h1>{% block page_title %}Início{% endblock %}</h1>
+    <div class="topbar-actions">{% block topbar_actions %}{% endblock %}</div>
   </div>
   <div class="content">
     {% if messages %}
@@ -137,6 +142,6 @@
     }
   });
 </script>
-
+{% block extra_js %}{% endblock %}
 </body>
 </html>

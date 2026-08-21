@@ -5,6 +5,8 @@ from django.core.exceptions import PermissionDenied
 from django.db.models import Count
 from django.http import Http404
 from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse
+from django.utils import timezone
 from django.views import View
 from django.views.generic import ListView, TemplateView
 
@@ -13,11 +15,17 @@ from departamentos.models import Departamento
 from usuarios.models import Usuario, CadastroPendente
 from usuarios.utils import gerar_senha_provisoria, gerar_username
 from .permissions import DashboardAccessMixin
+from .services import data_inicio_periodo, get_escopo
 
 
 class LoginView(DjangoLoginView):
     template_name = 'dashboard/login.html'
     redirect_authenticated_user = True
+
+    def get_success_url(self):
+        escopo = get_escopo(self.request.user)
+        url_name = escopo['redirect_pos_login'] or 'dashboard:home'
+        return reverse(url_name)
 
 
 class LogoutView(View):
@@ -26,15 +34,9 @@ class LogoutView(View):
         return redirect('dashboard:login')
 
 
-class MembrosAccessMixin(DashboardAccessMixin):
-    def test_func(self):
-        if not super().test_func():
-            return False
-        return self.escopo['nivel'] in ('fundador', 'pastor_presidente') or self.escopo['pode_aprovar_membros']
-
-
 class HomeView(DashboardAccessMixin, TemplateView):
     template_name = 'dashboard/home.html'
+    secao = 'home'
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
@@ -72,14 +74,15 @@ class HomeView(DashboardAccessMixin, TemplateView):
         return ctx
 
 
-class MembrosListView(MembrosAccessMixin, ListView):
+class MembrosListView(DashboardAccessMixin, ListView):
     model = Usuario
     template_name = 'dashboard/membros_list.html'
     context_object_name = 'membros'
     paginate_by = 25
+    secao = 'membros'
 
-    def get_queryset(self):
-        qs = Usuario.objects.select_related('campus').order_by('nome_completo')
+    def get_base_queryset(self):
+        qs = Usuario.objects.select_related('campus')
         escopo = self.escopo
 
         if escopo['nivel'] != 'fundador':
@@ -95,24 +98,73 @@ class MembrosListView(MembrosAccessMixin, ListView):
 
         return qs
 
+    def get_queryset(self):
+        qs = self.get_base_queryset()
+
+        ano = self.request.GET.get('ano')
+        mes = self.request.GET.get('mes')
+        periodo = self.request.GET.get('periodo')
+
+        if ano:
+            qs = qs.filter(date_joined__year=ano)
+            if mes:
+                qs = qs.filter(date_joined__month=mes)
+        elif periodo:
+            inicio = data_inicio_periodo(periodo, timezone.now())
+            if inicio:
+                qs = qs.filter(date_joined__gte=inicio)
+
+        ordenar = self.request.GET.get('ordenar', 'nome')
+        if ordenar == 'recentes':
+            qs = qs.order_by('-date_joined')
+        elif ordenar == 'antigos':
+            qs = qs.order_by('date_joined')
+        else:
+            qs = qs.order_by('nome_completo')
+
+        return qs
+
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
         escopo = self.escopo
         ctx['escopo'] = escopo
-        ctx['pode_editar'] = escopo['nivel'] in ('fundador', 'pastor_presidente')
+        ctx['pode_editar'] = escopo['pode_editar_membros']
+
+        base_qs = self.get_base_queryset()
+        agora = timezone.now()
+        ctx['total_membros'] = base_qs.count()
+        ctx['entraram_mes'] = base_qs.filter(
+            date_joined__year=agora.year, date_joined__month=agora.month,
+        ).count()
+
+        ctx['anos_disponiveis'] = [d.year for d in base_qs.dates('date_joined', 'year', order='DESC')]
+        ctx['meses'] = [
+            (1, 'Janeiro'), (2, 'Fevereiro'), (3, 'Março'), (4, 'Abril'), (5, 'Maio'), (6, 'Junho'),
+            (7, 'Julho'), (8, 'Agosto'), (9, 'Setembro'), (10, 'Outubro'), (11, 'Novembro'), (12, 'Dezembro'),
+        ]
 
         if escopo['nivel'] == 'fundador':
             ctx['campi'] = Campus.objects.all().order_by('nome')
 
         ctx['campus_selecionado'] = self.request.GET.get('campus', '')
         ctx['busca'] = self.request.GET.get('q', '')
+        ctx['periodo_selecionado'] = self.request.GET.get('periodo', '')
+        ctx['ano_selecionado'] = self.request.GET.get('ano', '')
+        ctx['mes_selecionado'] = self.request.GET.get('mes', '')
+        ctx['ordenar_selecionado'] = self.request.GET.get('ordenar', 'nome')
+
+        params = self.request.GET.copy()
+        params.pop('page', None)
+        ctx['querystring'] = params.urlencode()
+
         return ctx
 
 
-class CadastrosPendentesListView(MembrosAccessMixin, ListView):
+class CadastrosPendentesListView(DashboardAccessMixin, ListView):
     model = CadastroPendente
     template_name = 'dashboard/membros_pendentes.html'
     context_object_name = 'cadastros'
+    secao = 'membros_pendentes'
 
     def get_queryset(self):
         qs = CadastroPendente.objects.filter(status='pendente').select_related('campus').order_by('criado_em')
@@ -127,7 +179,9 @@ class CadastrosPendentesListView(MembrosAccessMixin, ListView):
         return ctx
 
 
-class CadastroPendenteAprovarView(MembrosAccessMixin, View):
+class CadastroPendenteAprovarView(DashboardAccessMixin, View):
+    secao = 'membros_pendentes'
+
     def post(self, request, *args, **kwargs):
         escopo = self.escopo
         qs = CadastroPendente.objects.filter(status='pendente')
@@ -164,6 +218,7 @@ class VoluntariosListView(DashboardAccessMixin, ListView):
     template_name = 'dashboard/voluntarios_list.html'
     context_object_name = 'voluntarios'
     paginate_by = 25
+    secao = 'voluntarios'
 
     def get_queryset(self):
         qs = (
@@ -196,7 +251,7 @@ class VoluntariosListView(DashboardAccessMixin, ListView):
         ctx = super().get_context_data(**kwargs)
         escopo = self.escopo
         ctx['escopo'] = escopo
-        ctx['pode_editar'] = escopo['nivel'] in ('fundador', 'pastor_presidente')
+        ctx['pode_editar'] = escopo['pode_editar_membros']
 
         if escopo['nivel'] == 'fundador':
             ctx['campi'] = Campus.objects.all().order_by('nome')
@@ -218,6 +273,11 @@ class UsuarioDetalheView(DashboardAccessMixin, View):
         qs = Usuario.objects.select_related('campus', 'voluntarioperfil__departamento')
         usuario = get_object_or_404(qs, pk=self.kwargs['pk'])
 
+        if usuario.role == 'membro' and 'membros' not in escopo['secoes_visiveis']:
+            raise Http404
+        if usuario.role == 'voluntario' and 'voluntarios' not in escopo['secoes_visiveis']:
+            raise Http404
+
         if escopo['nivel'] == 'fundador':
             return usuario
 
@@ -236,11 +296,11 @@ class UsuarioDetalheView(DashboardAccessMixin, View):
     def get(self, request, *args, **kwargs):
         usuario = self.get_usuario()
         escopo = self.escopo
-        pode_editar = escopo['nivel'] in ('fundador', 'pastor_presidente')
 
         contexto = {
             'usuario_alvo': usuario,
-            'pode_editar': pode_editar,
+            'pode_editar_membros': escopo['pode_editar_membros'],
+            'pode_redefinir_senha': escopo['pode_redefinir_senha'],
             'campi': Campus.objects.all().order_by('nome') if escopo['nivel'] == 'fundador' else None,
             'escopo': escopo,
         }
@@ -252,7 +312,7 @@ class UsuarioDetalheView(DashboardAccessMixin, View):
     def post(self, request, *args, **kwargs):
         usuario = self.get_usuario()
         escopo = self.escopo
-        if escopo['nivel'] not in ('fundador', 'pastor_presidente'):
+        if not escopo['pode_editar_membros']:
             raise PermissionDenied('Você não tem permissão pra editar esse cadastro.')
 
         usuario.nome_completo = request.POST.get('nome_completo', usuario.nome_completo).strip()
@@ -265,4 +325,27 @@ class UsuarioDetalheView(DashboardAccessMixin, View):
 
         usuario.save()
         messages.success(request, f'Dados de {usuario.nome_completo} atualizados.')
+        return redirect('dashboard:usuario_detalhe', pk=usuario.pk)
+
+
+class UsuarioResetarSenhaView(DashboardAccessMixin, View):
+    def post(self, request, *args, **kwargs):
+        escopo = self.escopo
+        if not escopo['pode_redefinir_senha']:
+            raise PermissionDenied('Você não tem permissão pra redefinir essa senha.')
+
+        qs = Usuario.objects.all()
+        if escopo['nivel'] != 'fundador':
+            qs = qs.filter(campus=escopo['campus'])
+        usuario = get_object_or_404(qs, pk=kwargs['pk'])
+
+        nova_senha = gerar_senha_provisoria()
+        usuario.set_password(nova_senha)
+        usuario.senha_temporaria = True
+        usuario.save()
+
+        messages.success(
+            request,
+            f'Senha de {usuario.nome_completo} redefinida — nova senha provisória: {nova_senha} (anote agora, não aparece de novo).',
+        )
         return redirect('dashboard:usuario_detalhe', pk=usuario.pk)
