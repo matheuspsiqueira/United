@@ -6,7 +6,7 @@ from django.utils import timezone
 from django.utils.html import format_html
 
 from departamentos.models import Departamento
-from .models import Usuario, VoluntarioPerfil, VersiculoFavorito, CadastroPendente, CadastroVoluntario
+from .models import Usuario, VoluntarioPerfil, VersiculoFavorito, CadastroPendente, CadastroVoluntario, PermissaoIndividual
 from .utils import gerar_senha_provisoria
 
 
@@ -159,3 +159,8 @@ class CadastroPendenteAdmin(admin.ModelAdmin):
 class CadastroVoluntarioAdmin(admin.ModelAdmin):
     list_display = ('membro', 'departamento_opcao_1', 'status', 'criado_em')
     list_filter = ('status', 'departamento_opcao_1')
+
+
+@admin.register(PermissaoIndividual)
+class PermissaoIndividualAdmin(admin.ModelAdmin):
+    list_display = ('usuario', 'acesso_dashboard', 'aprova_membros', 'edita_membros', 'visao_geral_voluntarios')

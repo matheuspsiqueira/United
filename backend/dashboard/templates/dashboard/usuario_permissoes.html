@@ -1,0 +1,7 @@
+{% extends 'dashboard/base.html' %}
+{% block page_title %}Permissões — {{ usuario_alvo.nome_completo }}{% endblock %}
+{% block content %}
+<div style="max-width: 560px;">
+  {% include 'dashboard/partials/usuario_permissoes_modal.html' %}
+</div>
+{% endblock %}

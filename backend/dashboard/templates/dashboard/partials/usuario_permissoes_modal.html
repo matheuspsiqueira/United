@@ -1,0 +1,130 @@
+<div class="modal-card wide">
+  <div class="modal-header">
+    <h3>Permissões — {{ usuario_alvo.nome_completo }}</h3>
+    <button type="button" data-modal-close class="modal-close">✕</button>
+  </div>
+
+  <div class="modal-body">
+    <div class="modal-section-title">Flags de acesso</div>
+
+    <form method="post" action="{% url 'dashboard:usuario_permissoes' usuario_alvo.pk %}">
+      {% csrf_token %}
+      <input type="hidden" name="acao" value="salvar_flags">
+
+      <div class="permissao-field">
+        <div class="permissao-field-head">
+          <span class="field-name">Acesso à dashboard</span>
+          <span class="field-default">padrão: {{ base_flags.acesso_dashboard|yesno:"sim,não" }}</span>
+        </div>
+        <div class="segmented">
+          <input type="radio" id="ad_padrao" name="acesso_dashboard" value="padrao" {% if overrides.acesso_dashboard is None %}checked{% endif %}>
+          <label for="ad_padrao">Padrão</label>
+          <input type="radio" id="ad_sim" name="acesso_dashboard" value="sim" {% if overrides.acesso_dashboard == True %}checked{% endif %}>
+          <label for="ad_sim" class="opt-sim">Sim</label>
+          <input type="radio" id="ad_nao" name="acesso_dashboard" value="nao" {% if overrides.acesso_dashboard == False %}checked{% endif %}>
+          <label for="ad_nao" class="opt-nao">Não</label>
+        </div>
+      </div>
+
+      <div class="permissao-field">
+        <div class="permissao-field-head">
+          <span class="field-name">Aprova cadastros de membros</span>
+          <span class="field-default">padrão: {{ base_flags.aprova_membros|yesno:"sim,não" }}</span>
+        </div>
+        <div class="segmented">
+          <input type="radio" id="am_padrao" name="aprova_membros" value="padrao" {% if overrides.aprova_membros is None %}checked{% endif %}>
+          <label for="am_padrao">Padrão</label>
+          <input type="radio" id="am_sim" name="aprova_membros" value="sim" {% if overrides.aprova_membros == True %}checked{% endif %}>
+          <label for="am_sim" class="opt-sim">Sim</label>
+          <input type="radio" id="am_nao" name="aprova_membros" value="nao" {% if overrides.aprova_membros == False %}checked{% endif %}>
+          <label for="am_nao" class="opt-nao">Não</label>
+        </div>
+      </div>
+
+      <div class="permissao-field">
+        <div class="permissao-field-head">
+          <span class="field-name">Edita cadastros de membros</span>
+          <span class="field-default">padrão: {{ base_flags.edita_membros|yesno:"sim,não" }}</span>
+        </div>
+        <div class="segmented">
+          <input type="radio" id="em_padrao" name="edita_membros" value="padrao" {% if overrides.edita_membros is None %}checked{% endif %}>
+          <label for="em_padrao">Padrão</label>
+          <input type="radio" id="em_sim" name="edita_membros" value="sim" {% if overrides.edita_membros == True %}checked{% endif %}>
+          <label for="em_sim" class="opt-sim">Sim</label>
+          <input type="radio" id="em_nao" name="edita_membros" value="nao" {% if overrides.edita_membros == False %}checked{% endif %}>
+          <label for="em_nao" class="opt-nao">Não</label>
+        </div>
+      </div>
+
+      <div class="permissao-field">
+        <div class="permissao-field-head">
+          <span class="field-name">Visão geral de voluntários</span>
+          <span class="field-default">padrão: {{ base_flags.visao_geral_voluntarios|yesno:"sim,não" }}</span>
+        </div>
+        <div class="segmented">
+          <input type="radio" id="vg_padrao" name="visao_geral_voluntarios" value="padrao" {% if overrides.visao_geral_voluntarios is None %}checked{% endif %}>
+          <label for="vg_padrao">Padrão</label>
+          <input type="radio" id="vg_sim" name="visao_geral_voluntarios" value="sim" {% if overrides.visao_geral_voluntarios == True %}checked{% endif %}>
+          <label for="vg_sim" class="opt-sim">Sim</label>
+          <input type="radio" id="vg_nao" name="visao_geral_voluntarios" value="nao" {% if overrides.visao_geral_voluntarios == False %}checked{% endif %}>
+          <label for="vg_nao" class="opt-nao">Não</label>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button type="submit" class="submit">Salvar permissões</button>
+      </div>
+    </form>
+
+    {% if usuario_alvo.role == 'voluntario' %}
+      <div class="modal-section-title">Liderança</div>
+      <form method="post" action="{% url 'dashboard:usuario_permissoes' usuario_alvo.pk %}">
+        {% csrf_token %}
+        <input type="hidden" name="acao" value="tornar_lider">
+        <div class="checkbox-grid">
+          {% for d in departamentos_disponiveis %}
+            <label class="checkbox-item">
+              <input type="checkbox" name="departamentos_lideranca" value="{{ d.id }}">
+              <span>{{ d.nome }}</span>
+            </label>
+          {% endfor %}
+        </div>
+        <div class="modal-footer">
+          <button type="submit" class="submit">Tornar líder</button>
+        </div>
+      </form>
+
+    {% elif usuario_alvo.role == 'lider' %}
+      <div class="modal-section-title">Liderança</div>
+      <label style="margin-top:0;">Departamentos liderados atualmente</label>
+      <div class="chip-group">
+        {% for d in departamentos_liderados_atual %}
+          <span class="chip primary">{{ d.nome }}</span>
+        {% endfor %}
+      </div>
+
+      <form method="post" action="{% url 'dashboard:usuario_permissoes' usuario_alvo.pk %}" style="margin-top:16px;">
+        {% csrf_token %}
+        <input type="hidden" name="acao" value="remover_lideranca">
+        <label style="margin-top:0;">Remover liderança e rebaixar para</label>
+        <div class="select-wrap">
+          <select name="novo_role" onchange="document.getElementById('depto_voluntario_wrap').style.display = this.value === 'voluntario' ? 'block' : 'none';">
+            <option value="voluntario">Voluntário</option>
+            <option value="membro">Membro (sai do departamento)</option>
+          </select>
+        </div>
+        <div id="depto_voluntario_wrap" class="select-wrap">
+          <label>Departamento como voluntário</label>
+          <select name="departamento_voluntario">
+            {% for d in departamentos_disponiveis %}
+              <option value="{{ d.id }}">{{ d.nome }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="modal-footer">
+          <button type="submit" class="reset-btn">Remover liderança</button>
+        </div>
+      </form>
+    {% endif %}
+  </div>
+</div>

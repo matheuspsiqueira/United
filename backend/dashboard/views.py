@@ -12,10 +12,10 @@ from django.views.generic import ListView, TemplateView
 
 from campus.models import Campus
 from departamentos.models import Departamento
-from usuarios.models import Usuario, CadastroPendente, CadastroVoluntario, VoluntarioPerfil
+from usuarios.models import Usuario, CadastroPendente, CadastroVoluntario, VoluntarioPerfil, PermissaoIndividual
 from usuarios.utils import gerar_senha_provisoria, gerar_username
 from .permissions import DashboardAccessMixin
-from .services import data_inicio_periodo, get_escopo
+from .services import data_inicio_periodo, get_escopo, permissoes_departamentos
 
 
 class LoginView(DjangoLoginView):
@@ -218,8 +218,9 @@ class VoluntariosListView(DashboardAccessMixin, ListView):
 
     def get_queryset(self):
         qs = (
-            Usuario.objects.filter(role='voluntario')
+            Usuario.objects.filter(role__in=('voluntario', 'lider'))
             .select_related('campus', 'voluntarioperfil__departamento')
+            .prefetch_related('departamentos_liderados')
             .order_by('nome_completo')
         )
         escopo = self.escopo
@@ -231,11 +232,17 @@ class VoluntariosListView(DashboardAccessMixin, ListView):
         else:
             qs = qs.filter(campus=escopo['campus'])
             if not escopo['visao_geral_voluntarios']:
-                qs = qs.filter(voluntarioperfil__departamento__in=escopo['departamentos'])
+                qs = qs.filter(
+                    Q(voluntarioperfil__departamento__in=escopo['departamentos'])
+                    | Q(departamentos_liderados__in=escopo['departamentos'])
+                ).distinct()
 
         departamento_id = self.request.GET.get('departamento')
         if departamento_id:
-            qs = qs.filter(voluntarioperfil__departamento_id=departamento_id)
+            qs = qs.filter(
+                Q(voluntarioperfil__departamento_id=departamento_id)
+                | Q(departamentos_liderados__id=departamento_id)
+            ).distinct()
 
         busca = self.request.GET.get('q')
         if busca:
@@ -248,6 +255,7 @@ class VoluntariosListView(DashboardAccessMixin, ListView):
         escopo = self.escopo
         ctx['escopo'] = escopo
         ctx['pode_editar'] = escopo['pode_editar_membros']
+        ctx['pode_gerenciar_permissoes'] = escopo['pode_gerenciar_permissoes']
 
         if escopo['campus'] is None:
             ctx['campi'] = Campus.objects.all().order_by('nome')
@@ -470,3 +478,105 @@ class CandidaturaVoluntarioDetalheView(DashboardAccessMixin, View):
             f'{membro.nome_completo} agora é voluntário(a) — departamento: {candidatura.departamento_aprovado.nome}.',
         )
         return redirect('dashboard:voluntarios_pendentes')
+
+
+class UsuarioPermissoesView(DashboardAccessMixin, View):
+    def test_func(self):
+        if not super().test_func():
+            return False
+        return self.escopo['pode_gerenciar_permissoes']
+
+    def get_usuario(self):
+        escopo = self.escopo
+        qs = Usuario.objects.filter(role__in=('voluntario', 'lider')).select_related(
+            'campus', 'voluntarioperfil__departamento',
+        ).prefetch_related('departamentos_liderados')
+        usuario = get_object_or_404(qs, pk=self.kwargs['pk'])
+        if escopo['campus'] is not None and usuario.campus_id != escopo['campus'].id:
+            raise Http404
+        return usuario
+
+    def get(self, request, *args, **kwargs):
+        usuario = self.get_usuario()
+        escopo = self.escopo
+
+        overrides_obj = getattr(usuario, 'permissao_individual', None)
+        overrides = {
+            campo: getattr(overrides_obj, campo, None)
+            for campo in ('acesso_dashboard', 'aprova_membros', 'edita_membros', 'visao_geral_voluntarios')
+        }
+
+        if usuario.role == 'voluntario':
+            departamento = usuario.voluntarioperfil.departamento if hasattr(usuario, 'voluntarioperfil') else None
+            base_flags = permissoes_departamentos([departamento] if departamento else [])
+        else:
+            base_flags = permissoes_departamentos(list(usuario.departamentos_liderados.all()))
+
+        contexto = {
+            'usuario_alvo': usuario,
+            'overrides': overrides,
+            'base_flags': base_flags,
+            'departamento_atual': usuario.voluntarioperfil.departamento if usuario.role == 'voluntario' and hasattr(usuario, 'voluntarioperfil') else None,
+            'departamentos_liderados_atual': usuario.departamentos_liderados.all(),
+            'departamentos_disponiveis': Departamento.objects.filter(campus=usuario.campus).order_by('nome'),
+            'escopo': escopo,
+        }
+
+        if request.headers.get('X-Requested-With') == 'fetch':
+            return render(request, 'dashboard/partials/usuario_permissoes_modal.html', contexto)
+        return render(request, 'dashboard/usuario_permissoes.html', contexto)
+
+    def post(self, request, *args, **kwargs):
+        usuario = self.get_usuario()
+        acao = request.POST.get('acao')
+
+        if acao == 'salvar_flags':
+            overrides, _ = PermissaoIndividual.objects.get_or_create(usuario=usuario)
+            for campo in ('acesso_dashboard', 'aprova_membros', 'edita_membros', 'visao_geral_voluntarios'):
+                valor = request.POST.get(campo)
+                if valor == 'sim':
+                    setattr(overrides, campo, True)
+                elif valor == 'nao':
+                    setattr(overrides, campo, False)
+                else:
+                    setattr(overrides, campo, None)
+            overrides.save()
+            messages.success(request, f'Permissões de {usuario.nome_completo} atualizadas.')
+
+        elif acao == 'tornar_lider':
+            if usuario.role != 'voluntario':
+                raise PermissionDenied('Só é possível promover quem já é voluntário.')
+            departamentos_ids = request.POST.getlist('departamentos_lideranca')
+            if not departamentos_ids:
+                raise PermissionDenied('Selecione ao menos um departamento pra liderar.')
+            usuario.role = 'lider'
+            usuario.save(update_fields=['role'])
+            usuario.departamentos_liderados.set(departamentos_ids)
+            VoluntarioPerfil.objects.filter(usuario=usuario).delete()
+            messages.success(request, f'{usuario.nome_completo} agora é líder.')
+
+        elif acao == 'remover_lideranca':
+            if usuario.role != 'lider':
+                raise PermissionDenied('Esse usuário não é líder.')
+            novo_role = request.POST.get('novo_role')
+            usuario.departamentos_liderados.clear()
+
+            if novo_role == 'voluntario':
+                departamento_id = request.POST.get('departamento_voluntario')
+                if not departamento_id:
+                    raise PermissionDenied('Selecione o departamento em que a pessoa continuará como voluntária.')
+                usuario.role = 'voluntario'
+                usuario.save(update_fields=['role'])
+                VoluntarioPerfil.objects.update_or_create(
+                    usuario=usuario,
+                    defaults={'departamento_id': departamento_id, 'data_aprovacao': timezone.now().date()},
+                )
+            else:
+                usuario.role = 'membro'
+                usuario.save(update_fields=['role'])
+                VoluntarioPerfil.objects.filter(usuario=usuario).delete()
+                PermissaoIndividual.objects.filter(usuario=usuario).delete()
+
+            messages.success(request, f'Liderança de {usuario.nome_completo} removida.')
+
+        return redirect('dashboard:voluntarios')

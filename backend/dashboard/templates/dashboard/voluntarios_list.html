@@ -37,8 +37,11 @@
     <thead>
       <tr>
         <th>Nome</th>
+        <th>Usuário</th>
         <th>Campus</th>
-        <th>Departamento</th>
+        <th>Papel</th>
+        <th>Entrou em</th>
+        {% if pode_gerenciar_permissoes %}<th></th>{% endif %}
       </tr>
     </thead>
     <tbody>
@@ -56,11 +59,22 @@
               <a href="{% url 'dashboard:usuario_detalhe' voluntario.pk %}" data-modal-url="{% url 'dashboard:usuario_detalhe' voluntario.pk %}">{{ voluntario.nome_completo }}</a>
             </div>
           </td>
+          <td class="mono">{{ voluntario.username }}</td>
           <td>{{ voluntario.campus.nome|default:"—" }}</td>
-          <td>{{ voluntario.voluntarioperfil.departamento.nome|default:"—" }}</td>
+          <td>
+            {% if voluntario.role == 'lider' %}
+              Líder — {% for d in voluntario.departamentos_liderados.all %}{{ d.nome }}{% if not forloop.last %}, {% endif %}{% endfor %}
+            {% else %}
+              Voluntário — {{ voluntario.voluntarioperfil.departamento.nome|default:"—" }}
+            {% endif %}
+          </td>
+          <td class="muted">{{ voluntario.date_joined|date:"d/m/Y" }}</td>
+          {% if pode_gerenciar_permissoes %}
+            <td><a class="approve-btn" data-modal-url="{% url 'dashboard:usuario_permissoes' voluntario.pk %}">Permissões</a></td>
+          {% endif %}
         </tr>
       {% empty %}
-        <tr><td colspan="3">Nenhum voluntário encontrado.</td></tr>
+        <tr><td colspan="6">Nenhum voluntário encontrado.</td></tr>
       {% endfor %}
     </tbody>
   </table>

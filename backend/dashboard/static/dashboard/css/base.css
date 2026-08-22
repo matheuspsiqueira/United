@@ -134,18 +134,19 @@ table.data-table tr:hover td { background: var(--surface-elevated); }
 
 .modal-root {
   display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
-  z-index: 41; width: 380px; max-width: 90vw;
+  z-index: 41; width: auto; max-width: 92vw;
 }
 .modal-root.show { display: block; animation: rise 0.2s ease both; }
 @keyframes rise { from { opacity: 0; transform: translate(-50%, -46%); } to { opacity: 1; transform: translate(-50%, -50%); } }
 
-.modal-card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; overflow: hidden; }
+.modal-card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; overflow: hidden; width: 380px; max-width: 100%; }
+.modal-card.wide { width: 560px; }
 .modal-header { display: flex; align-items: center; justify-content: space-between; padding: 16px 18px; border-bottom: 1px solid var(--border); }
 .modal-header h3 { font-size: 15px; }
 .modal-close { background: none; border: none; color: var(--text-secondary); font-size: 14px; cursor: pointer; }
 .modal-close:hover { color: var(--text-primary); }
 
-.modal-body { padding: 18px; }
+.modal-body { padding: 22px; }
 .modal-body label { display: block; font-size: 11.5px; color: var(--text-secondary); margin-bottom: 5px; margin-top: 12px; }
 .modal-body label:first-child { margin-top: 0; }
 .modal-body input, .modal-body select {
@@ -206,6 +207,39 @@ table.data-table tr:hover td { background: var(--surface-elevated); }
 .modal-footer.row { display: flex; gap: 8px; }
 .modal-footer.row .submit,
 .modal-footer.row .reset-btn { width: auto; flex: 1; margin-top: 0; }
+
+.modal-section-title {
+  font-size: 11.5px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-secondary);
+  font-family: 'JetBrains Mono', monospace; margin: 24px 0 14px; padding-top: 20px; border-top: 1px solid var(--border);
+}
+.modal-section-title:first-child { margin-top: 0; padding-top: 0; border-top: none; }
+
+.permissao-field { margin-bottom: 18px; }
+.permissao-field:last-child { margin-bottom: 0; }
+.permissao-field-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 9px; }
+.permissao-field-head .field-name { font-size: 13.5px; font-weight: 600; }
+.permissao-field-head .field-default { font-size: 11px; color: var(--text-secondary); font-family: 'JetBrains Mono', monospace; }
+
+.segmented { display: flex; background: var(--surface-elevated); border: 1px solid var(--border); border-radius: 10px; padding: 3px; gap: 3px; }
+.segmented input { display: none; }
+.segmented label {
+  flex: 1; text-align: center; padding: 8px 0; border-radius: 8px; font-size: 12.5px; font-weight: 600;
+  color: var(--text-secondary); cursor: pointer; border: 1px solid transparent; transition: background .15s, color .15s, border-color .15s;
+}
+.segmented label:hover { color: var(--text-primary); }
+.segmented input:checked + label { background: var(--surface); color: var(--text-primary); border-color: var(--border); }
+.segmented input:checked + label.opt-sim { background: var(--success); color: #fff; border-color: var(--success); }
+.segmented input:checked + label.opt-nao { background: var(--danger); color: #fff; border-color: var(--danger); }
+
+.checkbox-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; }
+.checkbox-item {
+  display: flex; align-items: center; gap: 9px; background: var(--surface-elevated); border: 1px solid var(--border);
+  border-radius: 9px; padding: 9px 12px; font-size: 12.5px; cursor: pointer; transition: border-color .15s;
+}
+.checkbox-item:hover { border-color: var(--accent); }
+.checkbox-item input { accent-color: var(--accent); width: 15px; height: 15px; flex-shrink: 0; }
+
+.select-wrap { margin-top: 8px; }
 
 @media (max-width: 900px) {
   .sidebar {

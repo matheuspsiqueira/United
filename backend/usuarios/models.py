@@ -110,3 +110,15 @@ class CadastroVoluntario(models.Model):
 
     def __str__(self):
         return f'{self.membro.nome_completo} — {self.get_status_display()}'
+
+
+class PermissaoIndividual(models.Model):
+    """Overrides pontuais por cima do padrão do Departamento. null = usa o padrão."""
+    usuario = models.OneToOneField(Usuario, related_name='permissao_individual', on_delete=models.CASCADE)
+    acesso_dashboard = models.BooleanField(null=True, blank=True)
+    aprova_membros = models.BooleanField(null=True, blank=True)
+    edita_membros = models.BooleanField(null=True, blank=True)
+    visao_geral_voluntarios = models.BooleanField(null=True, blank=True)
+
+    def __str__(self):
+        return f'Permissões individuais — {self.usuario.nome_completo}'
