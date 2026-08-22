@@ -3,4 +3,4 @@
 // local é reiniciado (plano free não tem subdomínio fixo).
 
 // src/config/api.js
-export const API_BASE_URL = 'https://sharing-stripes-glance-sign.trycloudflare.com/api';
+export const API_BASE_URL = 'https://jewelry-graduates-reflected-coat.trycloudflare.com/api';

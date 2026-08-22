@@ -1,0 +1,47 @@
+<div class="modal-card">
+  <div class="modal-header">
+    <h3>{{ usuario_alvo.nome_completo }}</h3>
+    <button type="button" data-modal-close class="modal-close">✕</button>
+  </div>
+
+  <div class="modal-body">
+    <div class="detail-row"><span>Usuário</span><strong class="mono">{{ usuario_alvo.username }}</strong></div>
+    <div class="detail-row"><span>E-mail</span><strong>{{ usuario_alvo.email|default:"—" }}</strong></div>
+    <div class="detail-row"><span>Campus</span><strong>{{ usuario_alvo.campus.nome|default:"—" }}</strong></div>
+    <div class="detail-row"><span>Membro desde</span><strong>{{ usuario_alvo.date_joined|date:"d/m/Y" }}</strong></div>
+
+    <hr class="modal-divider">
+
+    <label style="margin-top:0;">Departamentos escolhidos</label>
+    <div class="chip-group">
+      <span class="chip primary">1ª · {{ candidatura.departamento_opcao_1.nome }}</span>
+      {% if candidatura.departamento_opcao_2 %}
+        <span class="chip">2ª · {{ candidatura.departamento_opcao_2.nome }}</span>
+      {% endif %}
+      {% if candidatura.departamento_opcao_3 %}
+        <span class="chip">3ª · {{ candidatura.departamento_opcao_3.nome }}</span>
+      {% endif %}
+      {% if candidatura.departamento_fechado %}
+        <span class="chip">Fechado · {{ candidatura.departamento_fechado.nome }}</span>
+      {% endif %}
+    </div>
+
+    {% if departamentos_disponiveis %}
+      <form method="post" action="{% url 'dashboard:candidatura_voluntario_detalhe' candidatura.pk %}">
+        {% csrf_token %}
+        <label>Aprovar para qual departamento?</label>
+        <select name="departamento" required>
+          {% for d in departamentos_disponiveis %}
+            <option value="{{ d.id }}">{{ d.nome }}</option>
+          {% endfor %}
+        </select>
+        <div class="modal-footer row">
+          <button type="submit" name="acao" value="recusar" class="reset-btn">Recusar</button>
+          <button type="submit" name="acao" value="aprovar" class="submit">Aprovar</button>
+        </div>
+      </form>
+    {% else %}
+      <p class="muted" style="margin-top:14px;">Nenhum dos departamentos escolhidos está sob sua liderança.</p>
+    {% endif %}
+  </div>
+</div>

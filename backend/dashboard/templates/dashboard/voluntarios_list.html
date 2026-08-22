@@ -3,6 +3,13 @@
 {% block page_title %}Voluntários{% endblock %}
 
 {% block content %}
+{% if escopo.pode_aprovar_voluntarios %}
+<div class="tabs">
+  <a class="tab active" href="{% url 'dashboard:voluntarios' %}">Ativos</a>
+  <a class="tab" href="{% url 'dashboard:voluntarios_pendentes' %}">Pendentes</a>
+</div>
+{% endif %}
+
 <form class="filters-row" method="get">
   <input type="text" name="q" placeholder="Buscar por nome" value="{{ busca }}">
   {% if campi %}

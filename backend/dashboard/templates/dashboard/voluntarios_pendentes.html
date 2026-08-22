@@ -1,0 +1,41 @@
+{% extends 'dashboard/base.html' %}
+{% block page_title %}Fila de voluntários{% endblock %}
+{% block content %}
+
+<div class="tabs">
+  <a class="tab" href="{% url 'dashboard:voluntarios' %}">Ativos</a>
+  <a class="tab active" href="{% url 'dashboard:voluntarios_pendentes' %}">Pendentes</a>
+</div>
+
+<div class="table-wrap">
+  <table class="data-table">
+    <thead>
+      <tr>
+        <th>Candidato</th>
+        <th>Campus</th>
+        <th>Departamentos escolhidos</th>
+        <th>Inscrito em</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for c in candidaturas %}
+        <tr>
+          <td class="row-user">
+            <div class="avatar">{{ c.membro.nome_completo|slice:":2"|upper }}</div>
+            <a data-modal-url="{% url 'dashboard:candidatura_voluntario_detalhe' c.pk %}">{{ c.membro.nome_completo }}</a>
+          </td>
+          <td>{{ c.membro.campus.nome|default:"—" }}</td>
+          <td class="muted">
+            {{ c.departamento_opcao_1.nome }}
+            {% if c.departamento_opcao_2 %} · {{ c.departamento_opcao_2.nome }}{% endif %}
+            {% if c.departamento_opcao_3 %} · {{ c.departamento_opcao_3.nome }}{% endif %}
+          </td>
+          <td class="muted">{{ c.criado_em|date:"d/m/Y" }}</td>
+        </tr>
+      {% empty %}
+        <tr><td colspan="4" class="muted">Nenhuma candidatura pendente no seu escopo.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

@@ -191,6 +191,22 @@ table.data-table tr:hover td { background: var(--surface-elevated); }
   color: var(--text-primary);
 }
 
+.muted { color: var(--text-secondary); font-size: 12.5px; }
+
+.modal-divider { border: none; border-top: 1px solid var(--border); margin: 16px 0; }
+
+.chip-group { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0 4px; }
+.chip {
+  font-size: 11px; padding: 4px 10px; border-radius: 999px;
+  border: 1px solid var(--border); color: var(--text-secondary);
+  font-family: 'JetBrains Mono', monospace;
+}
+.chip.primary { border-color: var(--accent); color: var(--text-primary); background: var(--accent-glow); }
+
+.modal-footer.row { display: flex; gap: 8px; }
+.modal-footer.row .submit,
+.modal-footer.row .reset-btn { width: auto; flex: 1; margin-top: 0; }
+
 @media (max-width: 900px) {
   .sidebar {
     position: fixed; z-index: 30; height: 100vh; transform: translateX(-100%);

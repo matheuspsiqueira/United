@@ -6,14 +6,14 @@ from django.utils import timezone
 from django.utils.html import format_html
 
 from departamentos.models import Departamento
-from .models import Usuario, VoluntarioPerfil, VersiculoFavorito, CadastroPendente
+from .models import Usuario, VoluntarioPerfil, VersiculoFavorito, CadastroPendente, CadastroVoluntario
 from .utils import gerar_senha_provisoria
 
 
 class UsuarioCreationForm(forms.ModelForm):
     class Meta:
         model = Usuario
-        fields = ('username', 'nome_completo', 'email', 'campus', 'role', 'nivel_acesso')
+        fields = ('username', 'nome_completo', 'email', 'campus', 'role')
         field_classes = {'username': UsernameField}
 
     def save(self, commit=True):
@@ -32,6 +32,7 @@ class UsuarioChangeForm(forms.ModelForm):
         queryset=Departamento.objects.select_related('campus').order_by('campus__nome', 'nome'),
         required=False,
         widget=admin.widgets.FilteredSelectMultiple('departamentos liderados', False),
+        help_text='Preencher apenas para usuários com papel Líder.',
     )
 
     class Meta:
@@ -54,6 +55,7 @@ class VoluntarioPerfilInline(admin.StackedInline):
     model = VoluntarioPerfil
     extra = 0
     max_num = 1
+    min_num = 1
     verbose_name = 'Perfil de voluntário'
     verbose_name_plural = 'Perfil de voluntário'
     fields = ('departamento', 'data_aprovacao')
@@ -73,14 +75,14 @@ class UsuarioAdmin(UserAdmin):
     add_fieldsets = (
         (None, {
             'classes': ('wide',),
-            'fields': ('username', 'nome_completo', 'email', 'campus', 'role', 'nivel_acesso'),
+            'fields': ('username', 'nome_completo', 'email', 'campus', 'role'),
         }),
     )
 
     fieldsets = (
         (None, {'fields': ('username', 'password')}),
         ('Dados pessoais', {'fields': ('nome_completo', 'email', 'foto_perfil', 'campus', 'role')}),
-        ('Acesso à dashboard', {'fields': ('nivel_acesso', 'departamentos_liderados')}),
+        ('Liderança', {'fields': ('departamentos_liderados',)}),
         ('Status', {'fields': ('senha_temporaria', 'is_active', 'is_staff', 'is_superuser', 'groups', 'user_permissions')}),
         ('Datas', {'fields': ('last_login', 'date_joined')}),
     )
@@ -88,10 +90,10 @@ class UsuarioAdmin(UserAdmin):
     filter_horizontal = ('groups', 'user_permissions')
 
     list_display = (
-        'username', 'nome_completo', 'campus', 'role', 'nivel_acesso',
+        'username', 'nome_completo', 'campus', 'role',
         'departamento_voluntario', 'senha_temporaria', 'is_active',
     )
-    list_filter = ('role', 'nivel_acesso', 'campus', 'senha_temporaria', 'is_active')
+    list_filter = ('role', 'campus', 'senha_temporaria', 'is_active')
     search_fields = ('username', 'nome_completo', 'email')
 
     actions = ['resetar_senha_provisoria']
@@ -108,8 +110,8 @@ class UsuarioAdmin(UserAdmin):
 
     def departamento_voluntario(self, obj):
         perfil = getattr(obj, 'voluntarioperfil', None)
-        return perfil.departamento if perfil and perfil.departamento else '—'
-    departamento_voluntario.short_description = 'Departamento (voluntário)'
+        return perfil.departamento if perfil else '—'
+    departamento_voluntario.short_description = 'Departamento'
 
     def save_model(self, request, obj, form, change):
         super().save_model(request, obj, form, change)
@@ -152,3 +154,8 @@ class VersiculoFavoritoAdmin(admin.ModelAdmin):
 class CadastroPendenteAdmin(admin.ModelAdmin):
     list_display = ('nome_completo', 'campus', 'status', 'criado_em')
     list_filter = ('status', 'campus')
+
+@admin.register(CadastroVoluntario)
+class CadastroVoluntarioAdmin(admin.ModelAdmin):
+    list_display = ('membro', 'departamento_opcao_1', 'status', 'criado_em')
+    list_filter = ('status', 'departamento_opcao_1')

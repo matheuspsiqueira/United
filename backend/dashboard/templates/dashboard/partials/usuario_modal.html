@@ -5,7 +5,7 @@
   </div>
 
   <div class="modal-body">
-    {% if pode_editar_membros %}
+    {% if pode_editar %}
       <form method="post" action="{% url 'dashboard:usuario_detalhe' usuario_alvo.pk %}">
         {% csrf_token %}
         <label>Nome completo</label>
@@ -25,26 +25,26 @@
           <button type="submit" class="submit">Salvar</button>
         </div>
       </form>
-
-      {% if pode_redefinir_senha %}
-        <form method="post" action="{% url 'dashboard:usuario_resetar_senha' usuario_alvo.pk %}" style="margin-top:10px;">
-          {% csrf_token %}
-          <button
-            type="submit"
-            class="reset-btn"
-            onclick="return confirm('Gerar uma nova senha provisória para {{ usuario_alvo.nome_completo }}? A senha atual deixa de funcionar.');"
-          >
-            Redefinir senha
-          </button>
-        </form>
-      {% endif %}
     {% else %}
       <div class="detail-row"><span>Usuário</span><strong class="mono">{{ usuario_alvo.username }}</strong></div>
       <div class="detail-row"><span>E-mail</span><strong>{{ usuario_alvo.email|default:"—" }}</strong></div>
       <div class="detail-row"><span>Campus</span><strong>{{ usuario_alvo.campus.nome|default:"—" }}</strong></div>
-      {% if usuario_alvo.role == 'voluntario' %}
-        <div class="detail-row"><span>Departamento</span><strong>{{ usuario_alvo.voluntarioperfil.departamento.nome|default:"—" }}</strong></div>
+      {% if usuario_alvo.voluntarioperfil %}
+        <div class="detail-row"><span>Departamento</span><strong>{{ usuario_alvo.voluntarioperfil.departamento.nome }}</strong></div>
       {% endif %}
+    {% endif %}
+
+    {% if pode_redefinir_senha %}
+      <form method="post" action="{% url 'dashboard:usuario_resetar_senha' usuario_alvo.pk %}" style="margin-top:10px;">
+        {% csrf_token %}
+        <button
+          type="submit"
+          class="reset-btn"
+          onclick="return confirm('Gerar uma nova senha provisória para {{ usuario_alvo.nome_completo }}? A senha atual deixa de funcionar.');"
+        >
+          Redefinir senha
+        </button>
+      </form>
     {% endif %}
   </div>
 </div>

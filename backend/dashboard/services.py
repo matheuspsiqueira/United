@@ -1,65 +1,78 @@
 import calendar
 from datetime import timedelta
 
-ORDEM_SECOES_REDIRECT = [
-    ('membros_pendentes', 'dashboard:membros_pendentes'),
-    ('membros', 'dashboard:membros'),
-    ('voluntarios', 'dashboard:voluntarios'),
-]
+
+def _permissoes_departamentos(departamentos):
+    return {
+        'acesso_dashboard': any(d.acesso_dashboard for d in departamentos),
+        'aprova_membros': any(d.aprova_membros for d in departamentos),
+        'edita_membros': any(d.edita_membros for d in departamentos),
+        'visao_geral_voluntarios': any(d.visao_geral_voluntarios for d in departamentos),
+    }
 
 
 def _escopo_sem_acesso(usuario):
     return {
-        'nivel': None, 'label': 'Sem acesso', 'campus': usuario.campus, 'departamentos': [],
-        'visao_geral_voluntarios': False, 'pode_aprovar_membros': False, 'pode_editar_membros': False,
-        'pode_redefinir_senha': False, 'acesso_dashboard': False, 'secoes_visiveis': [],
+        'nivel': usuario.role,
+        'label': usuario.get_role_display(),
+        'campus': usuario.campus,
+        'departamentos': [],
+        'secoes_visiveis': [],
+        'visao_geral_voluntarios': False,
+        'pode_aprovar_membros': False,
+        'pode_aprovar_voluntarios': False,
+        'pode_editar_membros': False,
+        'pode_redefinir_senha': False,
         'redirect_pos_login': None,
+        'tem_acesso': False,
     }
 
 
 def get_escopo(usuario):
-    nivel = usuario.nivel_acesso
+    role = usuario.role
 
-    if nivel == 'fundador':
+    if role == 'apostolo':
         return {
-            'nivel': nivel, 'label': 'Fundador', 'campus': None, 'departamentos': [],
-            'visao_geral_voluntarios': True, 'pode_aprovar_membros': True, 'pode_editar_membros': True,
-            'pode_redefinir_senha': True, 'acesso_dashboard': True,
-            'secoes_visiveis': ['home', 'membros_pendentes', 'membros', 'voluntarios'],
-            'redirect_pos_login': 'dashboard:home',
+            'nivel': role, 'label': 'Apóstolo/Fundador', 'campus': None, 'departamentos': [],
+            'secoes_visiveis': ['home', 'membros_pendentes', 'membros', 'voluntarios', 'voluntarios_pendentes'],
+            'visao_geral_voluntarios': True, 'pode_aprovar_membros': True,
+            'pode_aprovar_voluntarios': True, 'pode_editar_membros': True,
+            'pode_redefinir_senha': True, 'redirect_pos_login': 'dashboard:home', 'tem_acesso': True,
         }
 
-    if nivel == 'pastor_presidente':
+    if role == 'pastor_presidente':
         return {
-            'nivel': nivel, 'label': 'Pastor presidente', 'campus': usuario.campus, 'departamentos': [],
-            'visao_geral_voluntarios': False, 'pode_aprovar_membros': True, 'pode_editar_membros': True,
-            'pode_redefinir_senha': True, 'acesso_dashboard': True,
-            'secoes_visiveis': ['home', 'membros_pendentes', 'membros', 'voluntarios'],
-            'redirect_pos_login': 'dashboard:home',
+            'nivel': role, 'label': 'Pastor Presidente', 'campus': usuario.campus, 'departamentos': [],
+            'secoes_visiveis': ['home', 'membros_pendentes', 'membros', 'voluntarios', 'voluntarios_pendentes'],
+            'visao_geral_voluntarios': True, 'pode_aprovar_membros': True,
+            'pode_aprovar_voluntarios': True, 'pode_editar_membros': True,
+            'pode_redefinir_senha': True, 'redirect_pos_login': 'dashboard:home', 'tem_acesso': True,
         }
 
-    if nivel == 'lider':
+    if role == 'lider':
         departamentos = list(usuario.departamentos_liderados.all())
-        visao_geral = any(d.visao_geral_voluntarios for d in departamentos)
-        aprova_membros = any(d.aprova_membros for d in departamentos)
-        edita_membros = any(d.edita_membros for d in departamentos)
+        perms = _permissoes_departamentos(departamentos)
+
+        if not perms['acesso_dashboard']:
+            return _escopo_sem_acesso(usuario)
+
+        secoes = ['home', 'voluntarios', 'voluntarios_pendentes']
+        if perms['aprova_membros']:
+            secoes += ['membros_pendentes', 'membros']
+
         nomes = ', '.join(d.nome for d in departamentos) or 'sem departamento'
-
-        secoes = ['home', 'voluntarios']
-        if aprova_membros:
-            secoes.append('membros_pendentes')
-        if edita_membros:
-            secoes.append('membros')
-
         return {
-            'nivel': nivel, 'label': f'Líder — {nomes}', 'campus': usuario.campus,
-            'departamentos': departamentos, 'visao_geral_voluntarios': visao_geral,
-            'pode_aprovar_membros': aprova_membros, 'pode_editar_membros': edita_membros,
-            'pode_redefinir_senha': edita_membros, 'acesso_dashboard': True,
-            'secoes_visiveis': secoes, 'redirect_pos_login': 'dashboard:home',
+            'nivel': role, 'label': f'Líder — {nomes}', 'campus': usuario.campus,
+            'departamentos': departamentos, 'secoes_visiveis': secoes,
+            'visao_geral_voluntarios': perms['visao_geral_voluntarios'],
+            'pode_aprovar_membros': perms['aprova_membros'],
+            'pode_aprovar_voluntarios': True,
+            'pode_editar_membros': perms['edita_membros'],
+            'pode_redefinir_senha': False,
+            'redirect_pos_login': 'dashboard:home', 'tem_acesso': True,
         }
 
-    if not nivel and usuario.role == 'voluntario':
+    if role == 'voluntario':
         perfil = getattr(usuario, 'voluntarioperfil', None)
         departamento = perfil.departamento if perfil else None
 
@@ -68,23 +81,20 @@ def get_escopo(usuario):
 
         secoes = []
         if departamento.aprova_membros:
-            secoes.append('membros_pendentes')
-        if departamento.edita_membros:
-            secoes.append('membros')
-        if departamento.visao_geral_voluntarios:
-            secoes.append('voluntarios')
-
-        redirect_pos_login = next(
-            (url for chave, url in ORDEM_SECOES_REDIRECT if chave in secoes), None,
-        )
+            secoes += ['membros_pendentes', 'membros']
+        redirect = 'dashboard:membros_pendentes' if departamento.aprova_membros else 'dashboard:home'
+        if not secoes:
+            secoes = ['home']
 
         return {
-            'nivel': None, 'label': f'Voluntário — {departamento.nome}', 'campus': usuario.campus,
-            'departamentos': [departamento], 'visao_geral_voluntarios': departamento.visao_geral_voluntarios,
+            'nivel': role, 'label': f'Voluntário — {departamento.nome}', 'campus': usuario.campus,
+            'departamentos': [departamento], 'secoes_visiveis': secoes,
+            'visao_geral_voluntarios': departamento.visao_geral_voluntarios,
             'pode_aprovar_membros': departamento.aprova_membros,
+            'pode_aprovar_voluntarios': False,
             'pode_editar_membros': departamento.edita_membros,
-            'pode_redefinir_senha': False, 'acesso_dashboard': True,
-            'secoes_visiveis': secoes, 'redirect_pos_login': redirect_pos_login,
+            'pode_redefinir_senha': False,
+            'redirect_pos_login': redirect, 'tem_acesso': True,
         }
 
     return _escopo_sem_acesso(usuario)

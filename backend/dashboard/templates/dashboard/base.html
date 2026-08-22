@@ -29,22 +29,21 @@
     </div>
   </div>
 
-  <nav>
-    {% if 'home' in escopo.secoes_visiveis or 'membros_pendentes' in escopo.secoes_visiveis %}
+ <nav>
+    {% if 'home' in escopo.secoes_visiveis %}
       <div class="nav-section-label">Visão geral</div>
-      {% if 'home' in escopo.secoes_visiveis %}
-        <a class="nav-item {% if request.resolver_match.url_name == 'home' %}active{% endif %}" href="{% url 'dashboard:home' %}">Início</a>
-      {% endif %}
-      {% if 'membros_pendentes' in escopo.secoes_visiveis %}
-        <a class="nav-item {% if request.resolver_match.url_name == 'membros_pendentes' %}active{% endif %}" href="{% url 'dashboard:membros_pendentes' %}">Fila de aprovação</a>
-      {% endif %}
+      <a class="nav-item {% if request.resolver_match.url_name == 'home' %}active{% endif %}" href="{% url 'dashboard:home' %}">Início</a>
     {% endif %}
 
-    <div class="nav-section-label">Conteúdo</div>
-    <span class="nav-item disabled">Séries <span class="soon">em breve</span></span>
-    <span class="nav-item disabled">Notícias <span class="soon">em breve</span></span>
-    <span class="nav-item disabled">Eventos <span class="soon">em breve</span></span>
-    <span class="nav-item disabled">Projetos <span class="soon">em breve</span></span>
+    {% if 'membros_pendentes' in escopo.secoes_visiveis or 'voluntarios_pendentes' in escopo.secoes_visiveis %}
+      <div class="nav-section-label">Aprovações</div>
+      {% if 'membros_pendentes' in escopo.secoes_visiveis %}
+        <a class="nav-item {% if request.resolver_match.url_name == 'membros_pendentes' %}active{% endif %}" href="{% url 'dashboard:membros_pendentes' %}">Fila de membros</a>
+      {% endif %}
+      {% if 'voluntarios_pendentes' in escopo.secoes_visiveis %}
+        <a class="nav-item {% if request.resolver_match.url_name == 'voluntarios_pendentes' %}active{% endif %}" href="{% url 'dashboard:voluntarios_pendentes' %}">Fila de voluntários</a>
+      {% endif %}
+    {% endif %}
 
     {% if 'membros' in escopo.secoes_visiveis or 'voluntarios' in escopo.secoes_visiveis %}
       <div class="nav-section-label">Pessoas</div>
@@ -55,6 +54,12 @@
         <a class="nav-item {% if request.resolver_match.url_name == 'voluntarios' %}active{% endif %}" href="{% url 'dashboard:voluntarios' %}">Voluntários</a>
       {% endif %}
     {% endif %}
+
+    <div class="nav-section-label">Conteúdo</div>
+    <span class="nav-item disabled">Séries <span class="soon">em breve</span></span>
+    <span class="nav-item disabled">Notícias <span class="soon">em breve</span></span>
+    <span class="nav-item disabled">Eventos <span class="soon">em breve</span></span>
+    <span class="nav-item disabled">Projetos <span class="soon">em breve</span></span>
   </nav>
 
   <div class="sidebar-footer">

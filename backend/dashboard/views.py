@@ -2,7 +2,7 @@ from django.contrib import messages
 from django.contrib.auth.views import LoginView as DjangoLoginView
 from django.contrib.auth import logout
 from django.core.exceptions import PermissionDenied
-from django.db.models import Count
+from django.db.models import Count, Q
 from django.http import Http404
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
@@ -12,7 +12,7 @@ from django.views.generic import ListView, TemplateView
 
 from campus.models import Campus
 from departamentos.models import Departamento
-from usuarios.models import Usuario, CadastroPendente
+from usuarios.models import Usuario, CadastroPendente, CadastroVoluntario, VoluntarioPerfil
 from usuarios.utils import gerar_senha_provisoria, gerar_username
 from .permissions import DashboardAccessMixin
 from .services import data_inicio_periodo, get_escopo
@@ -24,8 +24,7 @@ class LoginView(DjangoLoginView):
 
     def get_success_url(self):
         escopo = get_escopo(self.request.user)
-        url_name = escopo['redirect_pos_login'] or 'dashboard:home'
-        return reverse(url_name)
+        return reverse(escopo['redirect_pos_login'] or 'dashboard:login')
 
 
 class LogoutView(View):
@@ -36,7 +35,7 @@ class LogoutView(View):
 
 class HomeView(DashboardAccessMixin, TemplateView):
     template_name = 'dashboard/home.html'
-    secao = 'home'
+    secao_requerida = 'home'
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
@@ -46,7 +45,7 @@ class HomeView(DashboardAccessMixin, TemplateView):
         todos_qs = Usuario.objects.all()
         voluntarios_qs = Usuario.objects.filter(role='voluntario')
 
-        if escopo['nivel'] == 'fundador':
+        if escopo['campus'] is None:
             ctx['total_membros'] = todos_qs.count()
             ctx['total_voluntarios'] = voluntarios_qs.count()
             ctx['breakdown_campus'] = (
@@ -55,20 +54,17 @@ class HomeView(DashboardAccessMixin, TemplateView):
                 .annotate(total=Count('id'))
                 .order_by('-total')
             )
-
         elif escopo['nivel'] == 'pastor_presidente':
             campus = escopo['campus']
             ctx['total_membros'] = todos_qs.filter(campus=campus).count()
             ctx['total_voluntarios'] = voluntarios_qs.filter(campus=campus).count()
-
-        elif escopo['nivel'] == 'lider':
+        else:  # lider
             campus = escopo['campus']
             if escopo['visao_geral_voluntarios']:
                 ctx['total_voluntarios'] = voluntarios_qs.filter(campus=campus).count()
             else:
-                deptos = escopo['departamentos']
                 ctx['total_voluntarios'] = voluntarios_qs.filter(
-                    campus=campus, voluntarioperfil__departamento__in=deptos,
+                    campus=campus, voluntarioperfil__departamento__in=escopo['departamentos'],
                 ).count()
 
         return ctx
@@ -79,13 +75,13 @@ class MembrosListView(DashboardAccessMixin, ListView):
     template_name = 'dashboard/membros_list.html'
     context_object_name = 'membros'
     paginate_by = 25
-    secao = 'membros'
+    secao_requerida = 'membros'
 
     def get_base_queryset(self):
         qs = Usuario.objects.select_related('campus')
         escopo = self.escopo
 
-        if escopo['nivel'] != 'fundador':
+        if escopo['campus'] is not None:
             qs = qs.filter(campus=escopo['campus'])
         else:
             campus_id = self.request.GET.get('campus')
@@ -143,7 +139,7 @@ class MembrosListView(DashboardAccessMixin, ListView):
             (7, 'Julho'), (8, 'Agosto'), (9, 'Setembro'), (10, 'Outubro'), (11, 'Novembro'), (12, 'Dezembro'),
         ]
 
-        if escopo['nivel'] == 'fundador':
+        if escopo['campus'] is None:
             ctx['campi'] = Campus.objects.all().order_by('nome')
 
         ctx['campus_selecionado'] = self.request.GET.get('campus', '')
@@ -164,12 +160,12 @@ class CadastrosPendentesListView(DashboardAccessMixin, ListView):
     model = CadastroPendente
     template_name = 'dashboard/membros_pendentes.html'
     context_object_name = 'cadastros'
-    secao = 'membros_pendentes'
+    secao_requerida = 'membros_pendentes'
 
     def get_queryset(self):
         qs = CadastroPendente.objects.filter(status='pendente').select_related('campus').order_by('criado_em')
         escopo = self.escopo
-        if escopo['nivel'] != 'fundador':
+        if escopo['campus'] is not None:
             qs = qs.filter(campus=escopo['campus'])
         return qs
 
@@ -180,12 +176,12 @@ class CadastrosPendentesListView(DashboardAccessMixin, ListView):
 
 
 class CadastroPendenteAprovarView(DashboardAccessMixin, View):
-    secao = 'membros_pendentes'
+    secao_requerida = 'membros_pendentes'
 
     def post(self, request, *args, **kwargs):
         escopo = self.escopo
         qs = CadastroPendente.objects.filter(status='pendente')
-        if escopo['nivel'] != 'fundador':
+        if escopo['campus'] is not None:
             qs = qs.filter(campus=escopo['campus'])
         cadastro = get_object_or_404(qs, pk=kwargs['pk'])
 
@@ -218,7 +214,7 @@ class VoluntariosListView(DashboardAccessMixin, ListView):
     template_name = 'dashboard/voluntarios_list.html'
     context_object_name = 'voluntarios'
     paginate_by = 25
-    secao = 'voluntarios'
+    secao_requerida = 'voluntarios'
 
     def get_queryset(self):
         qs = (
@@ -228,13 +224,13 @@ class VoluntariosListView(DashboardAccessMixin, ListView):
         )
         escopo = self.escopo
 
-        if escopo['nivel'] == 'fundador':
+        if escopo['campus'] is None:
             campus_id = self.request.GET.get('campus')
             if campus_id:
                 qs = qs.filter(campus_id=campus_id)
         else:
             qs = qs.filter(campus=escopo['campus'])
-            if escopo['nivel'] == 'lider' and not escopo['visao_geral_voluntarios']:
+            if not escopo['visao_geral_voluntarios']:
                 qs = qs.filter(voluntarioperfil__departamento__in=escopo['departamentos'])
 
         departamento_id = self.request.GET.get('departamento')
@@ -253,10 +249,10 @@ class VoluntariosListView(DashboardAccessMixin, ListView):
         ctx['escopo'] = escopo
         ctx['pode_editar'] = escopo['pode_editar_membros']
 
-        if escopo['nivel'] == 'fundador':
+        if escopo['campus'] is None:
             ctx['campi'] = Campus.objects.all().order_by('nome')
             ctx['departamentos'] = Departamento.objects.select_related('campus').order_by('campus__nome', 'nome')
-        elif escopo['nivel'] == 'pastor_presidente' or escopo['visao_geral_voluntarios']:
+        elif escopo['visao_geral_voluntarios']:
             ctx['departamentos'] = Departamento.objects.filter(campus=escopo['campus']).order_by('nome')
         else:
             ctx['departamentos'] = None
@@ -273,19 +269,13 @@ class UsuarioDetalheView(DashboardAccessMixin, View):
         qs = Usuario.objects.select_related('campus', 'voluntarioperfil__departamento')
         usuario = get_object_or_404(qs, pk=self.kwargs['pk'])
 
-        if usuario.role == 'membro' and 'membros' not in escopo['secoes_visiveis']:
-            raise Http404
-        if usuario.role == 'voluntario' and 'voluntarios' not in escopo['secoes_visiveis']:
-            raise Http404
-
-        if escopo['nivel'] == 'fundador':
+        if escopo['campus'] is None:
             return usuario
 
-        campus_id = escopo['campus'].id if escopo['campus'] else None
-        if usuario.campus_id != campus_id:
+        if usuario.campus_id != escopo['campus'].id:
             raise Http404
 
-        if escopo['nivel'] == 'lider' and usuario.role == 'voluntario' and not escopo['visao_geral_voluntarios']:
+        if usuario.role == 'voluntario' and not escopo['visao_geral_voluntarios']:
             deptos_ids = [d.id for d in escopo['departamentos']]
             perfil = getattr(usuario, 'voluntarioperfil', None)
             if not perfil or perfil.departamento_id not in deptos_ids:
@@ -299,9 +289,9 @@ class UsuarioDetalheView(DashboardAccessMixin, View):
 
         contexto = {
             'usuario_alvo': usuario,
-            'pode_editar_membros': escopo['pode_editar_membros'],
+            'pode_editar': escopo['pode_editar_membros'],
             'pode_redefinir_senha': escopo['pode_redefinir_senha'],
-            'campi': Campus.objects.all().order_by('nome') if escopo['nivel'] == 'fundador' else None,
+            'campi': Campus.objects.all().order_by('nome') if escopo['campus'] is None else None,
             'escopo': escopo,
         }
 
@@ -318,7 +308,7 @@ class UsuarioDetalheView(DashboardAccessMixin, View):
         usuario.nome_completo = request.POST.get('nome_completo', usuario.nome_completo).strip()
         usuario.email = request.POST.get('email', usuario.email).strip()
 
-        if escopo['nivel'] == 'fundador':
+        if escopo['campus'] is None:
             campus_id = request.POST.get('campus')
             if campus_id:
                 usuario.campus_id = campus_id
@@ -335,7 +325,7 @@ class UsuarioResetarSenhaView(DashboardAccessMixin, View):
             raise PermissionDenied('Você não tem permissão pra redefinir essa senha.')
 
         qs = Usuario.objects.all()
-        if escopo['nivel'] != 'fundador':
+        if escopo['campus'] is not None:
             qs = qs.filter(campus=escopo['campus'])
         usuario = get_object_or_404(qs, pk=kwargs['pk'])
 
@@ -349,3 +339,134 @@ class UsuarioResetarSenhaView(DashboardAccessMixin, View):
             f'Senha de {usuario.nome_completo} redefinida — nova senha provisória: {nova_senha} (anote agora, não aparece de novo).',
         )
         return redirect('dashboard:usuario_detalhe', pk=usuario.pk)
+
+
+class CandidaturasVoluntarioListView(DashboardAccessMixin, ListView):
+    model = CadastroVoluntario
+    template_name = 'dashboard/voluntarios_pendentes.html'
+    context_object_name = 'candidaturas'
+    secao_requerida = 'voluntarios_pendentes'
+
+    def get_queryset(self):
+        qs = (
+            CadastroVoluntario.objects.filter(status='pendente')
+            .select_related(
+                'membro', 'membro__campus', 'departamento_opcao_1',
+                'departamento_opcao_2', 'departamento_opcao_3', 'departamento_fechado',
+            )
+            .order_by('criado_em')
+        )
+        escopo = self.escopo
+
+        if escopo['campus'] is not None:
+            qs = qs.filter(membro__campus=escopo['campus'])
+
+        if escopo['nivel'] == 'lider':
+            deptos_ids = [d.id for d in escopo['departamentos']]
+            qs = qs.filter(
+                Q(departamento_opcao_1_id__in=deptos_ids)
+                | Q(departamento_opcao_2_id__in=deptos_ids)
+                | Q(departamento_opcao_3_id__in=deptos_ids)
+                | Q(departamento_fechado_id__in=deptos_ids)
+            )
+
+        return qs
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        ctx['escopo'] = self.escopo
+        return ctx
+
+
+class CandidaturaVoluntarioDetalheView(DashboardAccessMixin, View):
+    secao_requerida = 'voluntarios_pendentes'
+
+    def get_candidatura(self):
+        escopo = self.escopo
+        qs = CadastroVoluntario.objects.select_related(
+            'membro', 'membro__campus', 'departamento_opcao_1',
+            'departamento_opcao_2', 'departamento_opcao_3', 'departamento_fechado',
+        )
+        candidatura = get_object_or_404(qs, pk=self.kwargs['pk'], status='pendente')
+
+        if escopo['campus'] is not None and candidatura.membro.campus_id != escopo['campus'].id:
+            raise Http404
+
+        if escopo['nivel'] == 'lider':
+            deptos_ids = {d.id for d in escopo['departamentos']}
+            opcoes_ids = {
+                candidatura.departamento_opcao_1_id, candidatura.departamento_opcao_2_id,
+                candidatura.departamento_opcao_3_id, candidatura.departamento_fechado_id,
+            }
+            if not deptos_ids & opcoes_ids:
+                raise Http404
+
+        return candidatura
+
+    def get(self, request, *args, **kwargs):
+        candidatura = self.get_candidatura()
+        escopo = self.escopo
+
+        opcoes = [
+            candidatura.departamento_opcao_1, candidatura.departamento_opcao_2,
+            candidatura.departamento_opcao_3, candidatura.departamento_fechado,
+        ]
+        departamentos_disponiveis = [d for d in opcoes if d is not None]
+
+        if escopo['nivel'] == 'lider':
+            deptos_lider_ids = {d.id for d in escopo['departamentos']}
+            departamentos_disponiveis = [d for d in departamentos_disponiveis if d.id in deptos_lider_ids]
+
+        contexto = {
+            'candidatura': candidatura,
+            'usuario_alvo': candidatura.membro,
+            'departamentos_disponiveis': departamentos_disponiveis,
+            'escopo': escopo,
+        }
+
+        if request.headers.get('X-Requested-With') == 'fetch':
+            return render(request, 'dashboard/partials/candidatura_voluntario_modal.html', contexto)
+        return render(request, 'dashboard/candidatura_voluntario_detalhe.html', contexto)
+
+    def post(self, request, *args, **kwargs):
+        candidatura = self.get_candidatura()
+        escopo = self.escopo
+        acao = request.POST.get('acao')
+
+        if acao == 'recusar':
+            candidatura.status = 'recusado'
+            candidatura.save(update_fields=['status'])
+            messages.success(request, f'Candidatura de {candidatura.membro.nome_completo} recusada.')
+            return redirect('dashboard:voluntarios_pendentes')
+
+        departamento_id = request.POST.get('departamento')
+        opcoes_ids = {
+            candidatura.departamento_opcao_1_id, candidatura.departamento_opcao_2_id,
+            candidatura.departamento_opcao_3_id, candidatura.departamento_fechado_id,
+        }
+        if not departamento_id or int(departamento_id) not in opcoes_ids:
+            raise PermissionDenied('Escolha um dos departamentos indicados na candidatura.')
+
+        if escopo['nivel'] == 'lider':
+            deptos_lider_ids = {d.id for d in escopo['departamentos']}
+            if int(departamento_id) not in deptos_lider_ids:
+                raise PermissionDenied('Você só pode aprovar para um departamento que você lidera.')
+
+        membro = candidatura.membro
+        VoluntarioPerfil.objects.update_or_create(
+            usuario=membro,
+            defaults={'departamento_id': departamento_id, 'data_aprovacao': timezone.now().date()},
+        )
+        membro.role = 'voluntario'
+        membro.save(update_fields=['role'])
+
+        candidatura.status = 'aprovado'
+        candidatura.departamento_aprovado_id = departamento_id
+        candidatura.aprovado_por = request.user
+        candidatura.save(update_fields=['status', 'departamento_aprovado', 'aprovado_por'])
+
+        messages.success(
+            request,
+            f'{membro.nome_completo} agora é voluntário(a) — departamento: {candidatura.departamento_aprovado.nome}.',
+        )
+        return redirect('dashboard:voluntarios_pendentes')

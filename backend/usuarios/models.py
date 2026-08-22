@@ -8,12 +8,9 @@ class Usuario(AbstractUser):
     ROLE_CHOICES = [
         ('membro', 'Membro'),
         ('voluntario', 'Voluntário'),
-    ]
-
-    NIVEL_ACESSO_CHOICES = [
-        ('fundador', 'Fundador'),
-        ('pastor_presidente', 'Pastor Presidente'),
         ('lider', 'Líder'),
+        ('pastor_presidente', 'Pastor Presidente'),
+        ('apostolo', 'Apóstolo/Fundador'),
     ]
 
     nome_completo = models.CharField(max_length=150)
@@ -23,25 +20,23 @@ class Usuario(AbstractUser):
     )
     foto_perfil = models.ImageField(upload_to='perfis/', blank=True, null=True)
     senha_temporaria = models.BooleanField(default=True)
-    role = models.CharField(max_length=10, choices=ROLE_CHOICES, default='membro')
-    nivel_acesso = models.CharField(
-        max_length=20, choices=NIVEL_ACESSO_CHOICES, blank=True, null=True,
-    )
+    role = models.CharField(max_length=20, choices=ROLE_CHOICES, default='membro')
 
     def __str__(self):
         return self.nome_completo
 
 
 class VoluntarioPerfil(models.Model):
+    """Só existe para role == 'voluntario'. Líder pra cima usa departamentos_liderados."""
     usuario = models.OneToOneField(Usuario, on_delete=models.CASCADE)
     departamento = models.ForeignKey(
         'departamentos.Departamento', related_name='voluntarios',
-        on_delete=models.SET_NULL, null=True, blank=True,
+        on_delete=models.PROTECT,
     )
     data_aprovacao = models.DateField()
 
     def __str__(self):
-        return f'Voluntário: {self.usuario.nome_completo}'
+        return f'Voluntário: {self.usuario.nome_completo} — {self.departamento.nome}'
 
 
 class VersiculoFavorito(models.Model):
@@ -75,3 +70,43 @@ class CadastroPendente(models.Model):
 
     def __str__(self):
         return f'{self.nome_completo} — {self.get_status_display()}'
+
+
+class CadastroVoluntario(models.Model):
+    STATUS_CHOICES = [
+        ('pendente', 'Pendente'),
+        ('aprovado', 'Aprovado'),
+        ('recusado', 'Recusado'),
+    ]
+
+    membro = models.ForeignKey(
+        Usuario, related_name='candidaturas_voluntario', on_delete=models.CASCADE,
+    )
+    departamento_opcao_1 = models.ForeignKey(
+        'departamentos.Departamento', related_name='+', on_delete=models.PROTECT,
+    )
+    departamento_opcao_2 = models.ForeignKey(
+        'departamentos.Departamento', related_name='+', on_delete=models.PROTECT,
+        null=True, blank=True,
+    )
+    departamento_opcao_3 = models.ForeignKey(
+        'departamentos.Departamento', related_name='+', on_delete=models.PROTECT,
+        null=True, blank=True,
+    )
+    departamento_fechado = models.ForeignKey(
+        'departamentos.Departamento', related_name='+', on_delete=models.PROTECT,
+        null=True, blank=True,
+    )
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='pendente')
+    departamento_aprovado = models.ForeignKey(
+        'departamentos.Departamento', related_name='+', on_delete=models.SET_NULL,
+        null=True, blank=True,
+    )
+    aprovado_por = models.ForeignKey(
+        Usuario, related_name='candidaturas_aprovadas', on_delete=models.SET_NULL,
+        null=True, blank=True,
+    )
+    criado_em = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f'{self.membro.nome_completo} — {self.get_status_display()}'
