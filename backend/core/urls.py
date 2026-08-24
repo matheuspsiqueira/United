@@ -12,6 +12,7 @@ urlpatterns = [
     path('api/conteudo/', include('conteudo.urls')),
     path('api/series/', include('series.urls')),
     path('dashboard/', include('dashboard.urls')),
+    path('formulario-voluntario/', include('dashboard.urls_publico')),
 ]
 
 if settings.DEBUG:

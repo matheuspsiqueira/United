@@ -1,0 +1,31 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{% block title %}United — Treinamento de Voluntários{% endblock %}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{% static 'dashboard/css/tokens.css' %}">
+  <link rel="stylesheet" href="{% static 'dashboard/css/base.css' %}">
+</head>
+<body style="display:flex; align-items:center; justify-content:center; min-height:100vh; padding:24px;">
+  <div style="width:420px; max-width:100%;">
+    <div style="text-align:center; margin-bottom:22px;">
+      <div class="brand-mark" style="font-size:20px;">United</div>
+      <div class="brand-sub">Treinamento de Voluntários</div>
+    </div>
+    {% if messages %}
+      <div class="messages">
+        {% for message in messages %}
+          <div class="message {{ message.tags }}">{{ message }}</div>
+        {% endfor %}
+      </div>
+    {% endif %}
+    <div class="modal-card" style="width:100%;">
+      {% block content %}{% endblock %}
+    </div>
+  </div>
+</body>
+</html>

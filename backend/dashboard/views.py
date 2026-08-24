@@ -12,7 +12,10 @@ from django.views.generic import ListView, TemplateView
 
 from campus.models import Campus
 from departamentos.models import Departamento
-from usuarios.models import Usuario, CadastroPendente, CadastroVoluntario, VoluntarioPerfil, PermissaoIndividual
+from usuarios.models import (
+    Usuario, CadastroPendente, CadastroVoluntario, VoluntarioPerfil,
+    PermissaoIndividual, JanelaCandidaturaVoluntario,
+)
 from usuarios.utils import gerar_senha_provisoria, gerar_username
 from .permissions import DashboardAccessMixin
 from .services import data_inicio_periodo, get_escopo, permissoes_departamentos
@@ -268,6 +271,8 @@ class VoluntariosListView(DashboardAccessMixin, ListView):
         ctx['campus_selecionado'] = self.request.GET.get('campus', '')
         ctx['departamento_selecionado'] = self.request.GET.get('departamento', '')
         ctx['busca'] = self.request.GET.get('q', '')
+        ctx['janela_aberta'] = JanelaCandidaturaVoluntario.esta_aberta()
+        ctx['pode_gerenciar_formulario'] = escopo['pode_gerenciar_formulario_voluntario']
         return ctx
 
 
@@ -578,5 +583,119 @@ class UsuarioPermissoesView(DashboardAccessMixin, View):
                 PermissaoIndividual.objects.filter(usuario=usuario).delete()
 
             messages.success(request, f'Liderança de {usuario.nome_completo} removida.')
+
+        return redirect('dashboard:voluntarios')
+
+
+class CandidaturaVoluntarioIdentificarView(View):
+    def get(self, request):
+        if not JanelaCandidaturaVoluntario.esta_aberta():
+            return render(request, 'dashboard/candidatura_fechada.html')
+        return render(request, 'dashboard/candidatura_identificar.html')
+
+    def post(self, request):
+        if not JanelaCandidaturaVoluntario.esta_aberta():
+            return render(request, 'dashboard/candidatura_fechada.html')
+
+        username = request.POST.get('username', '').strip()
+        usuario = Usuario.objects.filter(username__iexact=username).first()
+
+        if not usuario:
+            messages.error(request, 'Usuário não encontrado. Confere se digitou certo.')
+            return render(request, 'dashboard/candidatura_identificar.html')
+
+        if usuario.role != 'membro':
+            messages.error(request, 'Esse usuário já é voluntário, líder ou tem outro papel — não dá pra se candidatar de novo.')
+            return render(request, 'dashboard/candidatura_identificar.html')
+
+        if CadastroVoluntario.objects.filter(membro=usuario, status='pendente').exists():
+            messages.error(request, 'Já existe uma candidatura pendente pra esse usuário. Aguarde um líder entrar em contato.')
+            return render(request, 'dashboard/candidatura_identificar.html')
+
+        return redirect('candidatura:formulario', usuario_id=usuario.pk)
+
+
+class CandidaturaVoluntarioFormularioView(View):
+    def get_membro(self, usuario_id):
+        usuario = get_object_or_404(Usuario, pk=usuario_id)
+        return usuario if usuario.role == 'membro' else None
+
+    def get(self, request, usuario_id):
+        if not JanelaCandidaturaVoluntario.esta_aberta():
+            return render(request, 'dashboard/candidatura_fechada.html')
+
+        membro = self.get_membro(usuario_id)
+        if not membro:
+            messages.error(request, 'Esse cadastro não está mais disponível pra candidatura.')
+            return redirect('candidatura:identificar')
+
+        contexto = {
+            'membro': membro,
+            'abertos': Departamento.objects.filter(campus=membro.campus, tipo='aberto').order_by('nome'),
+            'fechados': Departamento.objects.filter(campus=membro.campus, tipo='fechado').order_by('nome'),
+        }
+        return render(request, 'dashboard/candidatura_formulario.html', contexto)
+
+    def post(self, request, usuario_id):
+        if not JanelaCandidaturaVoluntario.esta_aberta():
+            return render(request, 'dashboard/candidatura_fechada.html')
+
+        membro = self.get_membro(usuario_id)
+        if not membro:
+            messages.error(request, 'Esse cadastro não está mais disponível pra candidatura.')
+            return redirect('candidatura:identificar')
+
+        if request.POST.get('aceitou_termo') != 'sim':
+            messages.error(request, 'É preciso concordar com o termo de compromisso pra continuar.')
+            return redirect('candidatura:formulario', usuario_id=membro.pk)
+
+        abertos_ids = set(
+            Departamento.objects.filter(campus=membro.campus, tipo='aberto').values_list('id', flat=True)
+        )
+        fechados_ids = set(
+            Departamento.objects.filter(campus=membro.campus, tipo='fechado').values_list('id', flat=True)
+        )
+
+        opcao_1 = request.POST.get('departamento_opcao_1')
+        opcao_2 = request.POST.get('departamento_opcao_2')
+        opcao_3 = request.POST.get('departamento_opcao_3')
+        fechado = request.POST.get('departamento_fechado') or None
+
+        for valor in (opcao_1, opcao_2, opcao_3):
+            if not valor or int(valor) not in abertos_ids:
+                messages.error(request, 'Escolha as 3 opções de departamento aberto.')
+                return redirect('candidatura:formulario', usuario_id=membro.pk)
+
+        if fechado and int(fechado) not in fechados_ids:
+            messages.error(request, 'Departamento fechado inválido.')
+            return redirect('candidatura:formulario', usuario_id=membro.pk)
+
+        CadastroVoluntario.objects.create(
+            membro=membro,
+            departamento_opcao_1_id=opcao_1,
+            departamento_opcao_2_id=opcao_2,
+            departamento_opcao_3_id=opcao_3,
+            departamento_fechado_id=fechado,
+            aceitou_termo=True,
+        )
+
+        return render(request, 'dashboard/candidatura_sucesso.html', {'membro': membro})
+
+
+class JanelaCandidaturaToggleView(DashboardAccessMixin, View):
+    def test_func(self):
+        if not super().test_func():
+            return False
+        return self.escopo['pode_gerenciar_formulario_voluntario']
+
+    def post(self, request, *args, **kwargs):
+        janela, _ = JanelaCandidaturaVoluntario.objects.get_or_create(pk=1)
+        janela.aberta = not janela.aberta
+        janela.save(update_fields=['aberta'])
+
+        if janela.aberta:
+            messages.success(request, 'Formulário de candidatura a voluntário habilitado.')
+        else:
+            messages.success(request, 'Formulário de candidatura a voluntário desabilitado.')
 
         return redirect('dashboard:voluntarios')

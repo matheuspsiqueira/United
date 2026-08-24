@@ -106,6 +106,7 @@ class CadastroVoluntario(models.Model):
         Usuario, related_name='candidaturas_aprovadas', on_delete=models.SET_NULL,
         null=True, blank=True,
     )
+    aceitou_termo = models.BooleanField(default=False)
     criado_em = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
@@ -122,3 +123,24 @@ class PermissaoIndividual(models.Model):
 
     def __str__(self):
         return f'Permissões individuais — {self.usuario.nome_completo}'
+
+
+class JanelaCandidaturaVoluntario(models.Model):
+    """Singleton — controla se o formulário público de candidatura está liberado."""
+    aberta = models.BooleanField(default=False)
+    atualizado_em = models.DateTimeField(auto_now=True)
+
+    def save(self, *args, **kwargs):
+        self.pk = 1
+        super().save(*args, **kwargs)
+
+    def delete(self, *args, **kwargs):
+        pass  # nunca deleta — é singleton
+
+    @classmethod
+    def esta_aberta(cls):
+        obj, _ = cls.objects.get_or_create(pk=1)
+        return obj.aberta
+
+    def __str__(self):
+        return 'Aberta' if self.aberta else 'Fechada'

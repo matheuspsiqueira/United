@@ -17,4 +17,5 @@ urlpatterns = [
     path('usuarios/<int:pk>/', views.UsuarioDetalheView.as_view(), name='usuario_detalhe'),
     path('usuarios/<int:pk>/resetar-senha/', views.UsuarioResetarSenhaView.as_view(), name='usuario_resetar_senha'),
     path('voluntarios/<int:pk>/permissoes/', views.UsuarioPermissoesView.as_view(), name='usuario_permissoes'),
+    path('voluntarios/formulario/toggle/', views.JanelaCandidaturaToggleView.as_view(), name='janela_candidatura_toggle'),
 ]

@@ -6,7 +6,7 @@ from django.utils import timezone
 from django.utils.html import format_html
 
 from departamentos.models import Departamento
-from .models import Usuario, VoluntarioPerfil, VersiculoFavorito, CadastroPendente, CadastroVoluntario, PermissaoIndividual
+from .models import Usuario, VoluntarioPerfil, VersiculoFavorito, CadastroPendente, CadastroVoluntario, PermissaoIndividual, JanelaCandidaturaVoluntario
 from .utils import gerar_senha_provisoria
 
 
@@ -164,3 +164,14 @@ class CadastroVoluntarioAdmin(admin.ModelAdmin):
 @admin.register(PermissaoIndividual)
 class PermissaoIndividualAdmin(admin.ModelAdmin):
     list_display = ('usuario', 'acesso_dashboard', 'aprova_membros', 'edita_membros', 'visao_geral_voluntarios')
+
+
+@admin.register(JanelaCandidaturaVoluntario)
+class JanelaCandidaturaVoluntarioAdmin(admin.ModelAdmin):
+    list_display = ('aberta', 'atualizado_em')
+
+    def has_add_permission(self, request):
+        return not JanelaCandidaturaVoluntario.objects.exists()
+
+    def has_delete_permission(self, request, obj=None):
+        return False

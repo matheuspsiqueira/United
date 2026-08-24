@@ -1,0 +1,65 @@
+{% extends 'dashboard/publico_base.html' %}
+{% block content %}
+<div class="modal-header"><h3>Olá, {{ membro.nome_completo }}</h3></div>
+<div class="modal-body">
+  <div class="detail-row"><span>Campus</span><strong>{{ membro.campus.nome }}</strong></div>
+  <hr class="modal-divider">
+
+  <p class="muted" style="margin-bottom:10px;">
+    Reconheço que li e entendi cada ponto para ser Voluntário da Igreja UNITED. Reconheço que cada ponto é fundamentado na Bíblia, ou seja, este não é simplesmente um termo criado para os propósitos da UNITED, mas é um código que Deus espera que todos os seus filhos obedeçam independentemente da posição ou status. Eu declaro que reconheço a validade do código e a importância de seguir cada ponto, a partir de hoje, me comprometo a seguir e guardar o código de Voluntários da UNITED. 
+  </p>
+  <p class="muted" style="margin-bottom:10px;">
+    Reconheço que agora eu sou um Voluntário da Igreja UNITED e, como tal, eu me comprometo a ser o melhor Voluntário para a UNITED que eu posso ser e esperar no Senhor pela Sua força e direção durante essa jornada. Devo manter uma vida saudável no lar e estar atento à minha conduta (tanto em palavras como em ações) e em como ela se reflete sobre o Senhor e sobre a UNITED. Comprometo-me a cumprir o que me for solicitado, fazendo-o com excelência e pontualidade. 
+  </p>  
+  <p class="muted" style="margin-bottom:10px;">
+    Reconheço que eu li e entendi todos os procedimentos como voluntário. Eu me comprometo a seguir os procedimentos de todas as formas com o melhor da minha capacidade. Me comprometo a fielmente comparecer à Igreja UNITED, cumprirei meus deveres de voluntário e servirei minha igreja com excelência. 
+  </p>
+  <p class="muted" style="margin-bottom:10px;">
+    Eu, a partir de agora, me comprometo com as promessas estabelecidas acima e a levar as minhas responsabilidades ao limite da minha capacidade com a ajuda do Espírito Santo que me guia e me fortalece. 
+  </p>
+
+  <form method="post">
+    {% csrf_token %}
+
+    <label style="margin-top:0;">Termo de compromisso</label>
+    <div class="segmented">
+      <input type="radio" id="termo_nao" name="aceitou_termo" value="nao">
+      <label for="termo_nao" class="opt-nao">Não concordo</label>
+      <input type="radio" id="termo_sim" name="aceitou_termo" value="sim">
+      <label for="termo_sim" class="opt-sim">Concordo</label>
+    </div>
+
+    <hr class="modal-divider">
+
+    <label>1ª opção de departamento aberto</label>
+    <select name="departamento_opcao_1" required>
+      <option value="">Selecione</option>
+      {% for d in abertos %}<option value="{{ d.id }}">{{ d.nome }}</option>{% endfor %}
+    </select>
+
+    <label>2ª opção de departamento aberto</label>
+    <select name="departamento_opcao_2" required>
+      <option value="">Selecione</option>
+      {% for d in abertos %}<option value="{{ d.id }}">{{ d.nome }}</option>{% endfor %}
+    </select>
+
+    <label>3ª opção de departamento aberto</label>
+    <select name="departamento_opcao_3" required>
+      <option value="">Selecione</option>
+      {% for d in abertos %}<option value="{{ d.id }}">{{ d.nome }}</option>{% endfor %}
+    </select>
+
+    {% if fechados %}
+      <label>Departamento fechado de interesse (opcional)</label>
+      <select name="departamento_fechado">
+        <option value="">Nenhum</option>
+        {% for d in fechados %}<option value="{{ d.id }}">{{ d.nome }}</option>{% endfor %}
+      </select>
+    {% endif %}
+
+    <div class="modal-footer">
+      <button type="submit" class="submit">Enviar candidatura</button>
+    </div>
+  </form>
+</div>
+{% endblock %}
