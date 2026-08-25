@@ -75,8 +75,6 @@
     <span class="nav-item disabled">Relatórios <span class="soon">em breve</span></span>
     {% if 'departamentos' in escopo.secoes_visiveis %}
       <a class="nav-item {% if request.resolver_match.url_name == 'departamentos' %}active{% endif %}" href="{% url 'dashboard:departamentos' %}">Departamentos</a>
-    {% else %}
-      <span class="nav-item disabled">Departamentos</span>
     {% endif %}
   </div>
 </nav>

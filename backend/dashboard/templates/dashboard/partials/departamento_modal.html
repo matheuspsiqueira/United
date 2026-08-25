@@ -18,17 +18,31 @@
         <label for="tipo-fechado">Fechado</label>
       </div>
 
-      <div class="modal-section-title">Líderes</div>
-      <div class="checkbox-grid">
-        {% for lider in lideres_disponiveis %}
-          <label class="checkbox-item">
-            <input type="checkbox" name="lideres" value="{{ lider.pk }}" {% if lider.pk in lideres_selecionados %}checked{% endif %}>
-            {{ lider.nome_completo }} <span class="muted">— {{ lider.campus.nome|default:"—" }}</span>
-          </label>
-        {% empty %}
-          <span class="muted">Nenhum líder cadastrado ainda.</span>
-        {% endfor %}
-      </div>
+      <div class="modal-section-title">Permissões padrão do departamento</div>
+      {% for campo in campos_flags %}
+        <div class="permissao-field">
+          <div class="permissao-field-head">
+            <span class="field-name">{{ campo.label }}</span>
+          </div>
+          <div class="segmented">
+            <input type="radio" id="{{ campo.nome }}-sim" name="{{ campo.nome }}" value="sim" {% if campo.valor %}checked{% endif %}>
+            <label class="opt-sim" for="{{ campo.nome }}-sim">Sim</label>
+            <input type="radio" id="{{ campo.nome }}-nao" name="{{ campo.nome }}" value="nao" {% if not campo.valor %}checked{% endif %}>
+            <label class="opt-nao" for="{{ campo.nome }}-nao">Não</label>
+          </div>
+        </div>
+      {% endfor %}
+
+      {% if departamento %}
+        <div class="modal-section-title">Líderes atuais</div>
+        <div class="chip-group">
+          {% for l in lideres_atuais %}
+            <span class="chip">{{ l.nome_completo }} — {{ l.campus.nome|default:"—" }}</span>
+          {% empty %}
+            <span class="muted">Nenhum líder designado ainda. Atribua pela tela de Voluntários.</span>
+          {% endfor %}
+        </div>
+      {% endif %}
 
       <div class="modal-footer">
         <button type="submit" class="submit">Salvar</button>

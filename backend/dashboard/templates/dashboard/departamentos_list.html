@@ -25,7 +25,10 @@
           <td>{{ d.nome }}</td>
           <td class="muted">{{ d.get_tipo_display }}</td>
           <td class="muted">
-            {% for l in d.lideres.all %}{{ l.nome_completo }} ({{ l.campus.nome|default:"—" }}){% if not forloop.last %}, {% endif %}{% empty %}—{% endfor %}
+            {% with total=d.lideres.count %}
+              {% for l in d.lideres.all|slice:":2" %}{{ l.nome_completo }}{% if not forloop.last %}, {% endif %}{% empty %}—{% endfor %}
+              {% if total > 2 %}...{% endif %}
+            {% endwith %}
           </td>
           <td class="muted">{{ d.voluntarios.count }}</td>
           <td>

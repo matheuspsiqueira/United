@@ -19,7 +19,7 @@ from usuarios.models import (
 )
 from usuarios.utils import gerar_senha_provisoria, gerar_username
 from .permissions import DashboardAccessMixin
-from .services import data_inicio_periodo, get_escopo, permissoes_departamentos
+from .services import data_inicio_periodo, get_escopo, permissoes_departamentos, CAMPOS_PERMISSAO, LABELS_PERMISSAO
 
 
 class LoginView(DjangoLoginView):
@@ -725,10 +725,20 @@ class DepartamentoFormView(DashboardAccessMixin, View):
 
     def get(self, request, *args, **kwargs):
         departamento = self.get_departamento()
+
+        campos_flags = [
+            {
+                'nome': campo,
+                'label': LABELS_PERMISSAO[campo],
+                'valor': getattr(departamento, campo, False) if departamento else False,
+            }
+            for campo in CAMPOS_PERMISSAO
+        ]
+
         contexto = {
             'departamento': departamento,
-            'lideres_disponiveis': Usuario.objects.filter(role='lider').select_related('campus').order_by('nome_completo'),
-            'lideres_selecionados': list(departamento.lideres.values_list('id', flat=True)) if departamento else [],
+            'campos_flags': campos_flags,
+            'lideres_atuais': departamento.lideres.select_related('campus').all() if departamento else None,
             'escopo': self.escopo,
         }
         if request.headers.get('X-Requested-With') == 'fetch':
@@ -739,7 +749,6 @@ class DepartamentoFormView(DashboardAccessMixin, View):
         departamento = self.get_departamento()
         nome = request.POST.get('nome', '').strip()
         tipo = request.POST.get('tipo')
-        lideres_ids = request.POST.getlist('lideres')
 
         if not nome or tipo not in ('aberto', 'fechado'):
             messages.error(request, 'Preencha nome e tipo do departamento.')
@@ -753,13 +762,15 @@ class DepartamentoFormView(DashboardAccessMixin, View):
             return redirect('dashboard:departamentos')
 
         if departamento is None:
-            departamento = Departamento.objects.create(nome=nome, tipo=tipo)
+            departamento = Departamento(nome=nome, tipo=tipo)
         else:
             departamento.nome = nome
             departamento.tipo = tipo
-            departamento.save(update_fields=['nome', 'tipo'])
 
-        departamento.lideres.set(lideres_ids)
+        for campo in CAMPOS_PERMISSAO:
+            setattr(departamento, campo, request.POST.get(campo) == 'sim')
+
+        departamento.save()
 
         messages.success(request, f'Departamento "{departamento.nome}" salvo.')
         return redirect('dashboard:departamentos')

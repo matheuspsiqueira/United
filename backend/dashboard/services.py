@@ -3,6 +3,13 @@ from datetime import timedelta
 
 CAMPOS_PERMISSAO = ('acesso_dashboard', 'aprova_membros', 'edita_membros', 'visao_geral_voluntarios')
 
+LABELS_PERMISSAO = {
+    'acesso_dashboard': 'Acesso à dashboard',
+    'aprova_membros': 'Aprova membros',
+    'edita_membros': 'Edita membros',
+    'visao_geral_voluntarios': 'Visão geral de voluntários',
+}
+
 
 def permissoes_departamentos(departamentos):
     return {campo: any(getattr(d, campo) for d in departamentos) for campo in CAMPOS_PERMISSAO}

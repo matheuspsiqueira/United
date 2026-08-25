@@ -19,10 +19,10 @@
     </thead>
     <tbody>
       {% for c in candidaturas %}
-        <tr>
+        <tr class="row-clickable" data-modal-url="{% url 'dashboard:candidatura_voluntario_detalhe' c.pk %}">
           <td class="row-user">
             <div class="avatar">{{ c.membro.nome_completo|slice:":2"|upper }}</div>
-            <a data-modal-url="{% url 'dashboard:candidatura_voluntario_detalhe' c.pk %}">{{ c.membro.nome_completo }}</a>
+            <span>{{ c.membro.nome_completo }}</span>
           </td>
           <td>{{ c.membro.campus.nome|default:"—" }}</td>
           <td class="muted">
