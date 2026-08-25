@@ -30,12 +30,15 @@
   </div>
 
  <nav>
-    {% if 'home' in escopo.secoes_visiveis %}
+  {% if 'home' in escopo.secoes_visiveis %}
+    <div class="nav-group">
       <div class="nav-section-label">Visão geral</div>
       <a class="nav-item {% if request.resolver_match.url_name == 'home' %}active{% endif %}" href="{% url 'dashboard:home' %}">Início</a>
-    {% endif %}
+    </div>
+  {% endif %}
 
-    {% if 'membros_pendentes' in escopo.secoes_visiveis or 'voluntarios_pendentes' in escopo.secoes_visiveis %}
+  {% if 'membros_pendentes' in escopo.secoes_visiveis or 'voluntarios_pendentes' in escopo.secoes_visiveis %}
+    <div class="nav-group">
       <div class="nav-section-label">Aprovações</div>
       {% if 'membros_pendentes' in escopo.secoes_visiveis %}
         <a class="nav-item {% if request.resolver_match.url_name == 'membros_pendentes' %}active{% endif %}" href="{% url 'dashboard:membros_pendentes' %}">Fila de membros</a>
@@ -43,9 +46,11 @@
       {% if 'voluntarios_pendentes' in escopo.secoes_visiveis %}
         <a class="nav-item {% if request.resolver_match.url_name == 'voluntarios_pendentes' %}active{% endif %}" href="{% url 'dashboard:voluntarios_pendentes' %}">Fila de voluntários</a>
       {% endif %}
-    {% endif %}
+    </div>
+  {% endif %}
 
-    {% if 'membros' in escopo.secoes_visiveis or 'voluntarios' in escopo.secoes_visiveis %}
+  {% if 'membros' in escopo.secoes_visiveis or 'voluntarios' in escopo.secoes_visiveis %}
+    <div class="nav-group">
       <div class="nav-section-label">Pessoas</div>
       {% if 'membros' in escopo.secoes_visiveis %}
         <a class="nav-item {% if request.resolver_match.url_name == 'membros' %}active{% endif %}" href="{% url 'dashboard:membros' %}">Membros</a>
@@ -53,14 +58,28 @@
       {% if 'voluntarios' in escopo.secoes_visiveis %}
         <a class="nav-item {% if request.resolver_match.url_name == 'voluntarios' %}active{% endif %}" href="{% url 'dashboard:voluntarios' %}">Voluntários</a>
       {% endif %}
-    {% endif %}
+    </div>
+  {% endif %}
 
+  <div class="nav-group">
     <div class="nav-section-label">Conteúdo</div>
     <span class="nav-item disabled">Séries <span class="soon">em breve</span></span>
     <span class="nav-item disabled">Notícias <span class="soon">em breve</span></span>
     <span class="nav-item disabled">Eventos <span class="soon">em breve</span></span>
     <span class="nav-item disabled">Projetos <span class="soon">em breve</span></span>
-  </nav>
+  </div>
+
+  <div class="nav-group">
+    <div class="nav-section-label">Administração</div>
+    <span class="nav-item disabled">Métricas <span class="soon">em breve</span></span>
+    <span class="nav-item disabled">Relatórios <span class="soon">em breve</span></span>
+    {% if 'departamentos' in escopo.secoes_visiveis %}
+      <a class="nav-item {% if request.resolver_match.url_name == 'departamentos' %}active{% endif %}" href="{% url 'dashboard:departamentos' %}">Departamentos</a>
+    {% else %}
+      <span class="nav-item disabled">Departamentos</span>
+    {% endif %}
+  </div>
+</nav>
 
   <div class="sidebar-footer">
     <div class="avatar">

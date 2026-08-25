@@ -6,10 +6,10 @@ from .models import Departamento
 @admin.register(Departamento)
 class DepartamentoAdmin(admin.ModelAdmin):
     list_display = (
-        'nome', 'campus', 'total_lideres', 'total_voluntarios',
+        'nome', 'tipo', 'total_lideres', 'total_voluntarios',
         'acesso_dashboard', 'visao_geral_voluntarios', 'aprova_membros', 'edita_membros',
     )
-    list_filter = ('campus', 'acesso_dashboard', 'aprova_membros', 'edita_membros')
+    list_filter = ('tipo', 'acesso_dashboard', 'aprova_membros', 'edita_membros')
     filter_horizontal = ('lideres',)
 
     def total_lideres(self, obj):

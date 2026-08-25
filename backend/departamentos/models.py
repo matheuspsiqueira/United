@@ -1,8 +1,6 @@
 from django.conf import settings
 from django.db import models
 
-from campus.models import Campus
-
 
 class Departamento(models.Model):
     TIPO_CHOICES = [
@@ -10,8 +8,7 @@ class Departamento(models.Model):
         ('fechado', 'Fechado'),
     ]
 
-    campus = models.ForeignKey(Campus, related_name='departamentos', on_delete=models.CASCADE)
-    nome = models.CharField(max_length=100)
+    nome = models.CharField(max_length=100, unique=True)
     tipo = models.CharField(max_length=10, choices=TIPO_CHOICES, default='aberto')
     lideres = models.ManyToManyField(
         settings.AUTH_USER_MODEL, related_name='departamentos_liderados', blank=True,
@@ -22,8 +19,7 @@ class Departamento(models.Model):
     edita_membros = models.BooleanField(default=False)
 
     class Meta:
-        unique_together = ('campus', 'nome')
+        ordering = ['nome']
 
     def __str__(self):
-        return f'{self.nome} — {self.campus.nome}'
-    
+        return self.nome

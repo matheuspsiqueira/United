@@ -22,7 +22,7 @@ def _escopo_sem_acesso(usuario):
         'departamentos': [], 'secoes_visiveis': [], 'visao_geral_voluntarios': False,
         'pode_aprovar_membros': False, 'pode_aprovar_voluntarios': False, 'pode_editar_membros': False,
         'pode_redefinir_senha': False, 'pode_gerenciar_permissoes': False,
-        'pode_gerenciar_formulario_voluntario': False,
+        'pode_gerenciar_formulario_voluntario': False, 'pode_gerenciar_departamentos': False,
         'redirect_pos_login': None, 'tem_acesso': False,
     }
 
@@ -33,10 +33,10 @@ def get_escopo(usuario):
     if role == 'apostolo':
         return {
             'nivel': role, 'label': 'Apóstolo/Fundador', 'campus': None, 'departamentos': [],
-            'secoes_visiveis': ['home', 'membros_pendentes', 'membros', 'voluntarios', 'voluntarios_pendentes'],
+            'secoes_visiveis': ['home', 'membros_pendentes', 'membros', 'voluntarios', 'voluntarios_pendentes', 'departamentos'],
             'visao_geral_voluntarios': True, 'pode_aprovar_membros': True, 'pode_aprovar_voluntarios': True,
             'pode_editar_membros': True, 'pode_redefinir_senha': True, 'pode_gerenciar_permissoes': True,
-            'pode_gerenciar_formulario_voluntario': True,
+            'pode_gerenciar_formulario_voluntario': True, 'pode_gerenciar_departamentos': True,
             'redirect_pos_login': 'dashboard:home', 'tem_acesso': True,
         }
 
@@ -46,7 +46,7 @@ def get_escopo(usuario):
             'secoes_visiveis': ['home', 'membros_pendentes', 'membros', 'voluntarios', 'voluntarios_pendentes'],
             'visao_geral_voluntarios': True, 'pode_aprovar_membros': True, 'pode_aprovar_voluntarios': True,
             'pode_editar_membros': True, 'pode_redefinir_senha': True, 'pode_gerenciar_permissoes': True,
-            'pode_gerenciar_formulario_voluntario': True,
+            'pode_gerenciar_formulario_voluntario': True, 'pode_gerenciar_departamentos': False,
             'redirect_pos_login': 'dashboard:home', 'tem_acesso': True,
         }
 
@@ -71,6 +71,7 @@ def get_escopo(usuario):
             'pode_aprovar_membros': flags['aprova_membros'], 'pode_aprovar_voluntarios': True,
             'pode_editar_membros': flags['edita_membros'], 'pode_redefinir_senha': False,
             'pode_gerenciar_permissoes': False, 'pode_gerenciar_formulario_voluntario': False,
+            'pode_gerenciar_departamentos': False,
             'redirect_pos_login': 'dashboard:home', 'tem_acesso': True,
         }
 
@@ -98,6 +99,7 @@ def get_escopo(usuario):
             'pode_aprovar_membros': flags['aprova_membros'], 'pode_aprovar_voluntarios': False,
             'pode_editar_membros': flags['edita_membros'], 'pode_redefinir_senha': False,
             'pode_gerenciar_permissoes': False, 'pode_gerenciar_formulario_voluntario': False,
+            'pode_gerenciar_departamentos': False,
             'redirect_pos_login': redirect, 'tem_acesso': True,
         }
 

@@ -50,7 +50,6 @@
     <thead>
       <tr>
         <th>Nome</th>
-        <th>Usuário</th>
         <th>Campus</th>
         <th>Papel</th>
         <th>Entrou em</th>
@@ -69,10 +68,9 @@
                   {{ voluntario.nome_completo|slice:":2"|upper }}
                 {% endif %}
               </div>
-              <a href="{% url 'dashboard:usuario_detalhe' voluntario.pk %}" data-modal-url="{% url 'dashboard:usuario_detalhe' voluntario.pk %}">{{ voluntario.nome_completo }}</a>
+              <span>{{ voluntario.nome_completo }}</span>
             </div>
           </td>
-          <td class="mono">{{ voluntario.username }}</td>
           <td>{{ voluntario.campus.nome|default:"—" }}</td>
           <td>
             {% if voluntario.role == 'lider' %}

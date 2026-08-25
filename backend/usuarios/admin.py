@@ -29,7 +29,7 @@ class UsuarioCreationForm(forms.ModelForm):
 
 class UsuarioChangeForm(forms.ModelForm):
     departamentos_liderados = forms.ModelMultipleChoiceField(
-        queryset=Departamento.objects.select_related('campus').order_by('campus__nome', 'nome'),
+        queryset=Departamento.objects.order_by('nome'),
         required=False,
         widget=admin.widgets.FilteredSelectMultiple('departamentos liderados', False),
         help_text='Preencher apenas para usuários com papel Líder.',

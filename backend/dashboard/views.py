@@ -3,6 +3,7 @@ from django.contrib.auth.views import LoginView as DjangoLoginView
 from django.contrib.auth import logout
 from django.core.exceptions import PermissionDenied
 from django.db.models import Count, Q
+from django.db.models.deletion import ProtectedError
 from django.http import Http404
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
@@ -262,11 +263,10 @@ class VoluntariosListView(DashboardAccessMixin, ListView):
 
         if escopo['campus'] is None:
             ctx['campi'] = Campus.objects.all().order_by('nome')
-            ctx['departamentos'] = Departamento.objects.select_related('campus').order_by('campus__nome', 'nome')
-        elif escopo['visao_geral_voluntarios']:
-            ctx['departamentos'] = Departamento.objects.filter(campus=escopo['campus']).order_by('nome')
-        else:
-            ctx['departamentos'] = None
+
+        ctx['departamentos'] = Departamento.objects.order_by('nome') if (
+            escopo['campus'] is None or escopo['visao_geral_voluntarios']
+        ) else None
 
         ctx['campus_selecionado'] = self.request.GET.get('campus', '')
         ctx['departamento_selecionado'] = self.request.GET.get('departamento', '')
@@ -523,7 +523,7 @@ class UsuarioPermissoesView(DashboardAccessMixin, View):
             'base_flags': base_flags,
             'departamento_atual': usuario.voluntarioperfil.departamento if usuario.role == 'voluntario' and hasattr(usuario, 'voluntarioperfil') else None,
             'departamentos_liderados_atual': usuario.departamentos_liderados.all(),
-            'departamentos_disponiveis': Departamento.objects.filter(campus=usuario.campus).order_by('nome'),
+            'departamentos_disponiveis': Departamento.objects.order_by('nome'),
             'escopo': escopo,
         }
 
@@ -631,8 +631,8 @@ class CandidaturaVoluntarioFormularioView(View):
 
         contexto = {
             'membro': membro,
-            'abertos': Departamento.objects.filter(campus=membro.campus, tipo='aberto').order_by('nome'),
-            'fechados': Departamento.objects.filter(campus=membro.campus, tipo='fechado').order_by('nome'),
+            'abertos': Departamento.objects.filter(tipo='aberto').order_by('nome'),
+            'fechados': Departamento.objects.filter(tipo='fechado').order_by('nome'),
         }
         return render(request, 'dashboard/candidatura_formulario.html', contexto)
 
@@ -650,10 +650,10 @@ class CandidaturaVoluntarioFormularioView(View):
             return redirect('candidatura:formulario', usuario_id=membro.pk)
 
         abertos_ids = set(
-            Departamento.objects.filter(campus=membro.campus, tipo='aberto').values_list('id', flat=True)
+            Departamento.objects.filter(tipo='aberto').values_list('id', flat=True)
         )
         fechados_ids = set(
-            Departamento.objects.filter(campus=membro.campus, tipo='fechado').values_list('id', flat=True)
+            Departamento.objects.filter(tipo='fechado').values_list('id', flat=True)
         )
 
         opcao_1 = request.POST.get('departamento_opcao_1')
@@ -699,3 +699,86 @@ class JanelaCandidaturaToggleView(DashboardAccessMixin, View):
             messages.success(request, 'Formulário de candidatura a voluntário desabilitado.')
 
         return redirect('dashboard:voluntarios')
+
+
+class DepartamentosListView(DashboardAccessMixin, ListView):
+    model = Departamento
+    template_name = 'dashboard/departamentos_list.html'
+    context_object_name = 'departamentos'
+    secao_requerida = 'departamentos'
+
+    def get_queryset(self):
+        return Departamento.objects.prefetch_related('lideres', 'lideres__campus').order_by('nome')
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        ctx['escopo'] = self.escopo
+        return ctx
+
+
+class DepartamentoFormView(DashboardAccessMixin, View):
+    secao_requerida = 'departamentos'
+
+    def get_departamento(self):
+        pk = self.kwargs.get('pk')
+        return get_object_or_404(Departamento, pk=pk) if pk else None
+
+    def get(self, request, *args, **kwargs):
+        departamento = self.get_departamento()
+        contexto = {
+            'departamento': departamento,
+            'lideres_disponiveis': Usuario.objects.filter(role='lider').select_related('campus').order_by('nome_completo'),
+            'lideres_selecionados': list(departamento.lideres.values_list('id', flat=True)) if departamento else [],
+            'escopo': self.escopo,
+        }
+        if request.headers.get('X-Requested-With') == 'fetch':
+            return render(request, 'dashboard/partials/departamento_modal.html', contexto)
+        return render(request, 'dashboard/departamento_form.html', contexto)
+
+    def post(self, request, *args, **kwargs):
+        departamento = self.get_departamento()
+        nome = request.POST.get('nome', '').strip()
+        tipo = request.POST.get('tipo')
+        lideres_ids = request.POST.getlist('lideres')
+
+        if not nome or tipo not in ('aberto', 'fechado'):
+            messages.error(request, 'Preencha nome e tipo do departamento.')
+            return redirect('dashboard:departamentos')
+
+        ja_existe = Departamento.objects.filter(nome__iexact=nome)
+        if departamento:
+            ja_existe = ja_existe.exclude(pk=departamento.pk)
+        if ja_existe.exists():
+            messages.error(request, 'Já existe um departamento com esse nome.')
+            return redirect('dashboard:departamentos')
+
+        if departamento is None:
+            departamento = Departamento.objects.create(nome=nome, tipo=tipo)
+        else:
+            departamento.nome = nome
+            departamento.tipo = tipo
+            departamento.save(update_fields=['nome', 'tipo'])
+
+        departamento.lideres.set(lideres_ids)
+
+        messages.success(request, f'Departamento "{departamento.nome}" salvo.')
+        return redirect('dashboard:departamentos')
+
+
+class DepartamentoExcluirView(DashboardAccessMixin, View):
+    secao_requerida = 'departamentos'
+
+    def post(self, request, *args, **kwargs):
+        departamento = get_object_or_404(Departamento, pk=kwargs['pk'])
+        nome = departamento.nome
+        try:
+            departamento.delete()
+        except ProtectedError:
+            messages.error(
+                request,
+                f'Não é possível excluir "{nome}": há voluntários ou candidaturas vinculadas a esse departamento.',
+            )
+            return redirect('dashboard:departamentos')
+
+        messages.success(request, f'Departamento "{nome}" excluído.')
+        return redirect('dashboard:departamentos')

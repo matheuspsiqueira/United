@@ -1,0 +1,49 @@
+{% extends 'dashboard/base.html' %}
+{% block page_title %}Departamentos{% endblock %}
+
+{% block topbar_actions %}
+  {% if escopo.pode_gerenciar_departamentos %}
+    <button class="approve-btn" data-modal-url="{% url 'dashboard:departamento_criar' %}">+ Novo departamento</button>
+  {% endif %}
+{% endblock %}
+
+{% block content %}
+<div class="table-wrap">
+  <table class="data-table">
+    <thead>
+      <tr>
+        <th>Nome</th>
+        <th>Tipo</th>
+        <th>Líderes</th>
+        <th>Voluntários</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for d in departamentos %}
+        <tr>
+          <td>{{ d.nome }}</td>
+          <td class="muted">{{ d.get_tipo_display }}</td>
+          <td class="muted">
+            {% for l in d.lideres.all %}{{ l.nome_completo }} ({{ l.campus.nome|default:"—" }}){% if not forloop.last %}, {% endif %}{% empty %}—{% endfor %}
+          </td>
+          <td class="muted">{{ d.voluntarios.count }}</td>
+          <td>
+            {% if escopo.pode_gerenciar_departamentos %}
+              <div style="display:flex; gap:6px; justify-content:flex-end;">
+                <button class="approve-btn" style="padding:6px 10px; font-size:12px;" data-modal-url="{% url 'dashboard:departamento_editar' d.pk %}">Editar</button>
+                <form method="post" action="{% url 'dashboard:departamento_excluir' d.pk %}" onsubmit="return confirm('Excluir {{ d.nome }}?');">
+                  {% csrf_token %}
+                  <button class="reset-btn" style="width:auto; padding:6px 10px; font-size:12px;" type="submit">Excluir</button>
+                </form>
+              </div>
+            {% endif %}
+          </td>
+        </tr>
+      {% empty %}
+        <tr><td colspan="5" class="muted">Nenhum departamento cadastrado ainda.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

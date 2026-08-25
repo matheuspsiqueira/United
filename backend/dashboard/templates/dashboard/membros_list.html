@@ -77,7 +77,6 @@
     <thead>
       <tr>
         <th>Nome</th>
-        <th>Usuário</th>
         <th>Campus</th>
         <th>Papel</th>
         <th>Entrou em</th>
@@ -85,7 +84,7 @@
     </thead>
     <tbody>
       {% for membro in membros %}
-        <tr>
+        <tr class="row-clickable" data-modal-url="{% url 'dashboard:usuario_detalhe' membro.pk %}">
           <td>
             <div class="row-user">
               <div class="avatar">
@@ -95,16 +94,15 @@
                   {{ membro.nome_completo|slice:":2"|upper }}
                 {% endif %}
               </div>
-              <a href="{% url 'dashboard:usuario_detalhe' membro.pk %}" data-modal-url="{% url 'dashboard:usuario_detalhe' membro.pk %}">{{ membro.nome_completo }}</a>
+              <span>{{ membro.nome_completo }}</span>
             </div>
           </td>
-          <td class="mono">{{ membro.username }}</td>
           <td>{{ membro.campus.nome|default:"—" }}</td>
-          <td>{% if membro.role == 'voluntario' %}Voluntário{% else %}Membro{% endif %}</td>
+          <td>{{ membro.get_role_display }}</td>
           <td class="mono">{{ membro.date_joined|date:"d/m/Y" }}</td>
         </tr>
       {% empty %}
-        <tr><td colspan="5">Nenhum membro encontrado.</td></tr>
+        <tr><td colspan="4">Nenhum membro encontrado.</td></tr>
       {% endfor %}
     </tbody>
   </table>

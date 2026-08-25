@@ -1,0 +1,38 @@
+<div class="modal-card wide">
+  <div class="modal-header">
+    <h3>{% if departamento %}Editar departamento{% else %}Novo departamento{% endif %}</h3>
+    <button class="modal-close" data-modal-close>&times;</button>
+  </div>
+  <div class="modal-body">
+    <form method="post" action="{% if departamento %}{% url 'dashboard:departamento_editar' departamento.pk %}{% else %}{% url 'dashboard:departamento_criar' %}{% endif %}">
+      {% csrf_token %}
+
+      <label>Nome</label>
+      <input type="text" name="nome" value="{{ departamento.nome|default:'' }}" required>
+
+      <label>Tipo</label>
+      <div class="segmented">
+        <input type="radio" id="tipo-aberto" name="tipo" value="aberto" {% if not departamento or departamento.tipo == 'aberto' %}checked{% endif %}>
+        <label for="tipo-aberto">Aberto</label>
+        <input type="radio" id="tipo-fechado" name="tipo" value="fechado" {% if departamento.tipo == 'fechado' %}checked{% endif %}>
+        <label for="tipo-fechado">Fechado</label>
+      </div>
+
+      <div class="modal-section-title">Líderes</div>
+      <div class="checkbox-grid">
+        {% for lider in lideres_disponiveis %}
+          <label class="checkbox-item">
+            <input type="checkbox" name="lideres" value="{{ lider.pk }}" {% if lider.pk in lideres_selecionados %}checked{% endif %}>
+            {{ lider.nome_completo }} <span class="muted">— {{ lider.campus.nome|default:"—" }}</span>
+          </label>
+        {% empty %}
+          <span class="muted">Nenhum líder cadastrado ainda.</span>
+        {% endfor %}
+      </div>
+
+      <div class="modal-footer">
+        <button type="submit" class="submit">Salvar</button>
+      </div>
+    </form>
+  </div>
+</div>
