@@ -29,7 +29,7 @@ def _escopo_sem_acesso(usuario):
         'departamentos': [], 'secoes_visiveis': [], 'visao_geral_voluntarios': False,
         'pode_aprovar_membros': False, 'pode_aprovar_voluntarios': False, 'pode_editar_membros': False,
         'pode_redefinir_senha': False, 'pode_gerenciar_permissoes': False,
-        'pode_gerenciar_formulario_voluntario': False, 'pode_gerenciar_departamentos': False,
+        'pode_gerenciar_formulario_voluntario': False,
         'redirect_pos_login': None, 'tem_acesso': False,
     }
 
@@ -40,10 +40,10 @@ def get_escopo(usuario):
     if role == 'apostolo':
         return {
             'nivel': role, 'label': 'Apóstolo/Fundador', 'campus': None, 'departamentos': [],
-            'secoes_visiveis': ['home', 'membros_pendentes', 'membros', 'voluntarios', 'voluntarios_pendentes', 'departamentos'],
+            'secoes_visiveis': ['home', 'membros_pendentes', 'membros', 'voluntarios', 'voluntarios_pendentes'],
             'visao_geral_voluntarios': True, 'pode_aprovar_membros': True, 'pode_aprovar_voluntarios': True,
             'pode_editar_membros': True, 'pode_redefinir_senha': True, 'pode_gerenciar_permissoes': True,
-            'pode_gerenciar_formulario_voluntario': True, 'pode_gerenciar_departamentos': True,
+            'pode_gerenciar_formulario_voluntario': True,
             'redirect_pos_login': 'dashboard:home', 'tem_acesso': True,
         }
 
@@ -53,13 +53,14 @@ def get_escopo(usuario):
             'secoes_visiveis': ['home', 'membros_pendentes', 'membros', 'voluntarios', 'voluntarios_pendentes'],
             'visao_geral_voluntarios': True, 'pode_aprovar_membros': True, 'pode_aprovar_voluntarios': True,
             'pode_editar_membros': True, 'pode_redefinir_senha': True, 'pode_gerenciar_permissoes': True,
-            'pode_gerenciar_formulario_voluntario': True, 'pode_gerenciar_departamentos': False,
+            'pode_gerenciar_formulario_voluntario': True,
             'redirect_pos_login': 'dashboard:home', 'tem_acesso': True,
         }
 
     if role == 'lider':
         departamentos = list(usuario.departamentos_liderados.all())
         base = permissoes_departamentos(departamentos)
+        base['acesso_dashboard'] = True  # líder sempre acessa a dashboard, independente da flag do departamento
         overrides = getattr(usuario, 'permissao_individual', None)
         flags = resolver_flags(base, overrides)
 
@@ -78,7 +79,6 @@ def get_escopo(usuario):
             'pode_aprovar_membros': flags['aprova_membros'], 'pode_aprovar_voluntarios': True,
             'pode_editar_membros': flags['edita_membros'], 'pode_redefinir_senha': False,
             'pode_gerenciar_permissoes': False, 'pode_gerenciar_formulario_voluntario': False,
-            'pode_gerenciar_departamentos': False,
             'redirect_pos_login': 'dashboard:home', 'tem_acesso': True,
         }
 
@@ -106,7 +106,6 @@ def get_escopo(usuario):
             'pode_aprovar_membros': flags['aprova_membros'], 'pode_aprovar_voluntarios': False,
             'pode_editar_membros': flags['edita_membros'], 'pode_redefinir_senha': False,
             'pode_gerenciar_permissoes': False, 'pode_gerenciar_formulario_voluntario': False,
-            'pode_gerenciar_departamentos': False,
             'redirect_pos_login': redirect, 'tem_acesso': True,
         }
 
@@ -128,6 +127,8 @@ def data_inicio_periodo(periodo, referencia):
         return referencia - timedelta(days=7)
     if periodo == 'mes':
         return subtrair_meses(referencia, 1)
+    if periodo == '6meses':
+        return subtrair_meses(referencia, 6)
     if periodo == '6meses':
         return subtrair_meses(referencia, 6)
     if periodo == 'ano':
