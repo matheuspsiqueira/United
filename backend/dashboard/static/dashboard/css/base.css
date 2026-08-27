@@ -149,14 +149,18 @@ tr.row-clickable { cursor: pointer; }
 .modal-root.show { display: block; animation: rise 0.2s ease both; }
 @keyframes rise { from { opacity: 0; transform: translate(-50%, -46%); } to { opacity: 1; transform: translate(-50%, -50%); } }
 
-.modal-card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; overflow: hidden; width: 380px; max-width: 100%; }
+.modal-card {
+  background: var(--surface); border: 1px solid var(--border); border-radius: 16px;
+  overflow: hidden; width: 380px; max-width: 100%;
+  max-height: 85vh; display: flex; flex-direction: column;
+}
 .modal-card.wide { width: 560px; }
-.modal-header { display: flex; align-items: center; justify-content: space-between; padding: 16px 18px; border-bottom: 1px solid var(--border); }
+.modal-header { display: flex; align-items: center; justify-content: space-between; padding: 16px 18px; border-bottom: 1px solid var(--border); flex-shrink: 0; }
 .modal-header h3 { font-size: 15px; }
 .modal-close { background: none; border: none; color: var(--text-secondary); font-size: 14px; cursor: pointer; }
 .modal-close:hover { color: var(--text-primary); }
 
-.modal-body { padding: 22px; }
+.modal-body { padding: 22px; overflow-y: auto; }
 .modal-body label { display: block; font-size: 11.5px; color: var(--text-secondary); margin-bottom: 5px; margin-top: 12px; }
 .modal-body label:first-child { margin-top: 0; }
 .modal-body input, .modal-body select {

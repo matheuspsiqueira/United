@@ -6,12 +6,27 @@
 
   <div class="modal-body">
     {% if pode_editar %}
-      <form method="post" action="{% url 'dashboard:usuario_detalhe' usuario_alvo.pk %}">
+      <form method="post" action="{% url 'dashboard:usuario_detalhe' usuario_alvo.pk %}" enctype="multipart/form-data">
         {% csrf_token %}
+
         <label>Nome completo</label>
         <input type="text" name="nome_completo" value="{{ usuario_alvo.nome_completo }}">
+
+        <label>Usuário</label>
+        <input type="text" name="username" value="{{ usuario_alvo.username }}">
+
         <label>E-mail</label>
         <input type="email" name="email" value="{{ usuario_alvo.email }}">
+
+        <label>Telefone</label>
+        <input type="text" name="telefone" value="{{ usuario_alvo.telefone }}">
+
+        <label>Idade</label>
+        <input type="number" name="idade" min="0" value="{{ usuario_alvo.idade|default:'' }}">
+
+        <label>Foto de perfil</label>
+        <input type="file" name="foto_perfil" accept="image/*">
+
         {% if campi %}
           <label>Campus</label>
           <select name="campus">
@@ -19,8 +34,16 @@
               <option value="{{ c.id }}" {% if c.id == usuario_alvo.campus_id %}selected{% endif %}>{{ c.nome }}</option>
             {% endfor %}
           </select>
+        {% else %}
+          <div class="detail-row"><span>Campus</span><strong>{{ usuario_alvo.campus.nome|default:"—" }}</strong></div>
         {% endif %}
-        <div class="detail-row"><span>Usuário</span><strong class="mono">{{ usuario_alvo.username }}</strong></div>
+
+        <div class="detail-row"><span>Papel</span><strong>{{ usuario_alvo.get_role_display }}</strong></div>
+        {% if usuario_alvo.voluntarioperfil %}
+          <div class="detail-row"><span>Departamento</span><strong>{{ usuario_alvo.voluntarioperfil.departamento.nome }}</strong></div>
+        {% endif %}
+        <div class="detail-row"><span>Cadastrado em</span><strong>{{ usuario_alvo.date_joined|date:"d/m/Y" }}</strong></div>
+
         <div class="modal-footer">
           <button type="submit" class="submit">Salvar</button>
         </div>
@@ -28,10 +51,14 @@
     {% else %}
       <div class="detail-row"><span>Usuário</span><strong class="mono">{{ usuario_alvo.username }}</strong></div>
       <div class="detail-row"><span>E-mail</span><strong>{{ usuario_alvo.email|default:"—" }}</strong></div>
+      <div class="detail-row"><span>Telefone</span><strong>{{ usuario_alvo.telefone|default:"—" }}</strong></div>
+      <div class="detail-row"><span>Idade</span><strong>{{ usuario_alvo.idade|default:"—" }}</strong></div>
       <div class="detail-row"><span>Campus</span><strong>{{ usuario_alvo.campus.nome|default:"—" }}</strong></div>
+      <div class="detail-row"><span>Papel</span><strong>{{ usuario_alvo.get_role_display }}</strong></div>
       {% if usuario_alvo.voluntarioperfil %}
         <div class="detail-row"><span>Departamento</span><strong>{{ usuario_alvo.voluntarioperfil.departamento.nome }}</strong></div>
       {% endif %}
+      <div class="detail-row"><span>Cadastrado em</span><strong>{{ usuario_alvo.date_joined|date:"d/m/Y" }}</strong></div>
     {% endif %}
 
     {% if pode_redefinir_senha %}

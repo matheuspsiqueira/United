@@ -18,6 +18,8 @@ class Usuario(AbstractUser):
         Campus, related_name='usuarios', on_delete=models.PROTECT,
         null=True, blank=True,
     )
+    telefone = models.CharField(max_length=20, blank=True)
+    idade = models.PositiveIntegerField(blank=True, null=True)
     foto_perfil = models.ImageField(upload_to='perfis/', blank=True, null=True)
     senha_temporaria = models.BooleanField(default=True)
     role = models.CharField(max_length=20, choices=ROLE_CHOICES, default='membro')

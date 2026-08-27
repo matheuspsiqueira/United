@@ -40,7 +40,7 @@ def get_escopo(usuario):
     if role == 'apostolo':
         return {
             'nivel': role, 'label': 'Apóstolo/Fundador', 'campus': None, 'departamentos': [],
-            'secoes_visiveis': ['home', 'membros_pendentes', 'membros', 'voluntarios', 'voluntarios_pendentes'],
+            'secoes_visiveis': ['home', 'membros_pendentes', 'membros', 'voluntarios', 'voluntarios_pendentes', 'departamentos'],
             'visao_geral_voluntarios': True, 'pode_aprovar_membros': True, 'pode_aprovar_voluntarios': True,
             'pode_editar_membros': True, 'pode_redefinir_senha': True, 'pode_gerenciar_permissoes': True,
             'pode_gerenciar_formulario_voluntario': True,
@@ -60,7 +60,7 @@ def get_escopo(usuario):
     if role == 'lider':
         departamentos = list(usuario.departamentos_liderados.all())
         base = permissoes_departamentos(departamentos)
-        base['acesso_dashboard'] = True  # líder sempre acessa a dashboard, independente da flag do departamento
+        base['acesso_dashboard'] = True
         overrides = getattr(usuario, 'permissao_individual', None)
         flags = resolver_flags(base, overrides)
 

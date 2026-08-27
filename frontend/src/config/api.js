@@ -3,4 +3,4 @@
 // local é reiniciado (plano free não tem subdomínio fixo).
 
 // src/config/api.js
-export const API_BASE_URL = 'https://choir-perfume-girlfriend-readily.trycloudflare.com/api';
+export const API_BASE_URL = 'https://nest-wellness-pulling-chest.trycloudflare.com/api';

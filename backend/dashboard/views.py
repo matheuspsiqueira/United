@@ -196,6 +196,8 @@ class CadastroPendenteAprovarView(DashboardAccessMixin, View):
             username=username,
             nome_completo=cadastro.nome_completo,
             campus=cadastro.campus,
+            telefone=cadastro.telefone,
+            idade=cadastro.idade,
             role='membro',
             senha_temporaria=True,
         )
@@ -318,8 +320,25 @@ class UsuarioDetalheView(DashboardAccessMixin, View):
         if not escopo['pode_editar_membros']:
             raise PermissionDenied('Você não tem permissão pra editar esse cadastro.')
 
+        username_antigo = usuario.username
+        novo_username = request.POST.get('username', usuario.username).strip()
+        username_mudou = novo_username != username_antigo
+
+        if username_mudou:
+            if Usuario.objects.filter(username__iexact=novo_username).exclude(pk=usuario.pk).exists():
+                messages.error(request, f'Já existe um usuário com o nome de usuário "{novo_username}".')
+                return redirect('dashboard:usuario_detalhe', pk=usuario.pk)
+            usuario.username = novo_username
+
         usuario.nome_completo = request.POST.get('nome_completo', usuario.nome_completo).strip()
         usuario.email = request.POST.get('email', usuario.email).strip()
+        usuario.telefone = request.POST.get('telefone', usuario.telefone).strip()
+
+        idade = request.POST.get('idade')
+        usuario.idade = int(idade) if idade else None
+
+        if 'foto_perfil' in request.FILES:
+            usuario.foto_perfil = request.FILES['foto_perfil']
 
         if escopo['campus'] is None:
             campus_id = request.POST.get('campus')
@@ -327,6 +346,12 @@ class UsuarioDetalheView(DashboardAccessMixin, View):
                 usuario.campus_id = campus_id
 
         usuario.save()
+
+        if username_mudou:
+            messages.warning(
+                request,
+                f'Nome de usuário alterado de "{username_antigo}" para "{novo_username}" — avise {usuario.nome_completo}, o login antigo deixa de funcionar.',
+            )
         messages.success(request, f'Dados de {usuario.nome_completo} atualizados.')
         return redirect('dashboard:usuario_detalhe', pk=usuario.pk)
 

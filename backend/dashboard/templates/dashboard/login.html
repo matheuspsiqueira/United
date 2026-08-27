@@ -13,7 +13,7 @@
       min-height: 100vh; display: flex; align-items: center; justify-content: center;
       position: relative; overflow: hidden;
       background: radial-gradient(circle at 30% 20%, rgba(155,138,217,0.25), transparent 55%),
-                  radial-gradient(circle at 75% 80%, rgba(95,175,141,0.18), transparent 50%),
+                  radial-gradient(circle at 75% 80%, #ff440041 , transparent 50%),
                   var(--bg);
     }
     .blob {
@@ -22,7 +22,7 @@
       top: -120px; left: -120px; animation: drift 14s ease-in-out infinite alternate;
     }
     .blob.two {
-      background: rgba(95,175,141,0.12); top: auto; left: auto; bottom: -140px; right: -140px;
+      background: #ff440041; top: auto; left: auto; bottom: -140px; right: -140px;
       animation-duration: 18s;
     }
     @keyframes drift { from { transform: translate(0,0); } to { transform: translate(40px, 30px); } }

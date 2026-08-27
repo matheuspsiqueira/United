@@ -163,6 +163,20 @@
       fecharModal();
     }
   });
+
+  document.addEventListener('submit', (e) => {
+    const form = e.target.closest('#modalRoot form');
+    if (!form) return;
+    e.preventDefault();
+    const formData = new FormData(form);
+    fetch(form.action, {
+      method: form.method || 'POST',
+      body: formData,
+      headers: { 'X-Requested-With': 'fetch' },
+    }).finally(() => {
+      window.location.reload();
+    });
+  });
 </script>
 {% block extra_js %}{% endblock %}
 </body>
