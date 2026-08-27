@@ -1,0 +1,20 @@
+<div class="modal-card">
+  <div class="modal-header">
+    <h3>Editar episódio</h3>
+    <button class="modal-close" data-modal-close>✕</button>
+  </div>
+  <form class="modal-body" method="post" action="{% url 'dashboard:episodio_editar' episodio.pk %}">
+    {% csrf_token %}
+    <label>Número</label>
+    {{ form.numero }}
+    <label>Título</label>
+    {{ form.titulo }}
+    <label>URL do YouTube</label>
+    {{ form.youtube_url }}
+    <label>Duração (minutos)</label>
+    {{ form.duracao_minutos }}
+    <div class="modal-footer">
+      <button class="submit" type="submit">Salvar</button>
+    </div>
+  </form>
+</div>

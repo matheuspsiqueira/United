@@ -17,6 +17,8 @@ class Departamento(models.Model):
     visao_geral_voluntarios = models.BooleanField(default=False)
     aprova_membros = models.BooleanField(default=False)
     edita_membros = models.BooleanField(default=False)
+    cria_conteudo = models.BooleanField(default=False)
+    edita_conteudo = models.BooleanField(default=False)
 
     class Meta:
         ordering = ['nome']

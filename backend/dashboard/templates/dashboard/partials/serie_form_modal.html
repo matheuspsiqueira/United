@@ -1,0 +1,31 @@
+<div class="modal-card wide">
+  <div class="modal-header">
+    <h3>Nova série</h3>
+    <button class="modal-close" data-modal-close>✕</button>
+  </div>
+  <form method="post" enctype="multipart/form-data" action="{% url 'dashboard:serie_criar' %}">
+    {% csrf_token %}
+    <div class="modal-body two-col">
+      <div class="col-cover">
+        <label for="{{ form.capa.id_for_label }}">Capa</label>
+        <div class="cover-preview empty" style="aspect-ratio: 3/4; margin-bottom: 8px;">Sem capa</div>
+        <div class="file-input">{{ form.capa }}</div>
+      </div>
+      <div class="col-fields">
+        {% if form.campus %}
+          <label for="{{ form.campus.id_for_label }}">Campus</label>
+          {{ form.campus }}
+        {% endif %}
+        <label for="{{ form.titulo.id_for_label }}">Título</label>
+        {{ form.titulo }}
+        <label for="{{ form.descricao.id_for_label }}">Descrição</label>
+        {{ form.descricao }}
+        <label for="{{ form.data_lancamento.id_for_label }}">Data de lançamento</label>
+        {{ form.data_lancamento }}
+      </div>
+    </div>
+    <div class="modal-footer" style="padding: 0 22px 22px;">
+      <button class="submit" type="submit">Criar série</button>
+    </div>
+  </form>
+</div>

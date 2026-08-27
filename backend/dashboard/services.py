@@ -1,13 +1,18 @@
 import calendar
 from datetime import timedelta
 
-CAMPOS_PERMISSAO = ('acesso_dashboard', 'aprova_membros', 'edita_membros', 'visao_geral_voluntarios')
+CAMPOS_PERMISSAO = (
+    'acesso_dashboard', 'aprova_membros', 'edita_membros', 'visao_geral_voluntarios',
+    'cria_conteudo', 'edita_conteudo',
+)
 
 LABELS_PERMISSAO = {
     'acesso_dashboard': 'Acesso à dashboard',
-    'aprova_membros': 'Aprova membros',
-    'edita_membros': 'Edita membros',
+    'aprova_membros': 'Aprovar membros',
+    'edita_membros': 'Editar membros',
     'visao_geral_voluntarios': 'Visão geral de voluntários',
+    'cria_conteudo': 'Criar conteúdo (séries, notícias, eventos, projetos)',
+    'edita_conteudo': 'Editar conteúdo (séries, notícias, eventos, projetos)',
 }
 
 
@@ -31,6 +36,7 @@ def _escopo_sem_acesso(usuario):
         'pode_redefinir_senha': False, 'pode_gerenciar_permissoes': False,
         'pode_gerenciar_formulario_voluntario': False,
         'redirect_pos_login': None, 'tem_acesso': False,
+        'pode_criar_conteudo': False, 'pode_editar_conteudo': False,
     }
 
 
@@ -40,21 +46,26 @@ def get_escopo(usuario):
     if role == 'apostolo':
         return {
             'nivel': role, 'label': 'Apóstolo/Fundador', 'campus': None, 'departamentos': [],
-            'secoes_visiveis': ['home', 'membros_pendentes', 'membros', 'voluntarios', 'voluntarios_pendentes', 'departamentos'],
+            'secoes_visiveis': ['home', 'membros_pendentes', 'membros', 'voluntarios', 'voluntarios_pendentes', 'departamentos', 'series'],
             'visao_geral_voluntarios': True, 'pode_aprovar_membros': True, 'pode_aprovar_voluntarios': True,
             'pode_editar_membros': True, 'pode_redefinir_senha': True, 'pode_gerenciar_permissoes': True,
             'pode_gerenciar_formulario_voluntario': True,
             'redirect_pos_login': 'dashboard:home', 'tem_acesso': True,
+            'pode_criar_conteudo': True,
+            'pode_editar_conteudo': True,
         }
 
     if role == 'pastor_presidente':
         return {
             'nivel': role, 'label': 'Pastor Presidente', 'campus': usuario.campus, 'departamentos': [],
-            'secoes_visiveis': ['home', 'membros_pendentes', 'membros', 'voluntarios', 'voluntarios_pendentes'],
+            'secoes_visiveis': ['home', 'membros_pendentes', 'membros', 'voluntarios', 'voluntarios_pendentes', 'series'],
             'visao_geral_voluntarios': True, 'pode_aprovar_membros': True, 'pode_aprovar_voluntarios': True,
             'pode_editar_membros': True, 'pode_redefinir_senha': True, 'pode_gerenciar_permissoes': True,
             'pode_gerenciar_formulario_voluntario': True,
             'redirect_pos_login': 'dashboard:home', 'tem_acesso': True,
+            'pode_criar_conteudo': True,
+            'pode_editar_conteudo': True,
+            
         }
 
     if role == 'lider':
@@ -71,6 +82,9 @@ def get_escopo(usuario):
         if flags['aprova_membros']:
             secoes += ['membros_pendentes', 'membros']
 
+        if flags['cria_conteudo'] or flags['edita_conteudo']:
+            secoes.append('series')
+
         nomes = ', '.join(d.nome for d in departamentos) or 'sem departamento'
         return {
             'nivel': role, 'label': f'Líder — {nomes}', 'campus': usuario.campus,
@@ -80,6 +94,8 @@ def get_escopo(usuario):
             'pode_editar_membros': flags['edita_membros'], 'pode_redefinir_senha': False,
             'pode_gerenciar_permissoes': False, 'pode_gerenciar_formulario_voluntario': False,
             'redirect_pos_login': 'dashboard:home', 'tem_acesso': True,
+            'pode_criar_conteudo': flags['cria_conteudo'],
+            'pode_editar_conteudo': flags['edita_conteudo'],
         }
 
     if role == 'voluntario':
@@ -99,6 +115,9 @@ def get_escopo(usuario):
         if not secoes:
             secoes = ['home']
 
+        if flags['cria_conteudo'] or flags['edita_conteudo']:
+            secoes.append('series')
+
         return {
             'nivel': role, 'label': f'Voluntário — {departamento.nome}', 'campus': usuario.campus,
             'departamentos': [departamento], 'secoes_visiveis': secoes,
@@ -107,6 +126,8 @@ def get_escopo(usuario):
             'pode_editar_membros': flags['edita_membros'], 'pode_redefinir_senha': False,
             'pode_gerenciar_permissoes': False, 'pode_gerenciar_formulario_voluntario': False,
             'redirect_pos_login': redirect, 'tem_acesso': True,
+            'pode_criar_conteudo': flags['cria_conteudo'],
+            'pode_editar_conteudo': flags['edita_conteudo'],
         }
 
     return _escopo_sem_acesso(usuario)

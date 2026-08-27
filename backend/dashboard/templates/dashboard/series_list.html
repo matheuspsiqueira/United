@@ -1,0 +1,44 @@
+{% extends 'dashboard/base.html' %}
+{% block page_title %}Séries{% endblock %}
+{% block topbar_actions %}
+  {% if pode_criar %}
+    <a class="approve-btn" data-modal-url="{% url 'dashboard:serie_criar' %}">+ Nova série</a>
+  {% endif %}
+{% endblock %}
+{% block content %}
+
+{% if series_por_campus %}
+  {% for campus, lista in series_por_campus %}
+    <div class="modal-section-title">{{ campus.nome }}</div>
+    <div class="series-grid">
+      {% for serie in lista %}
+        <div class="serie-card">
+          <img src="{{ serie.capa.url }}" alt="{{ serie.titulo }}">
+          <div class="serie-card-body">
+            <div class="serie-card-title">{{ serie.titulo }}</div>
+            <div class="muted">{{ serie.quantidade_episodios }} episódio{{ serie.quantidade_episodios|pluralize }} · {{ serie.data_lancamento|date:"m/Y" }}</div>
+            {% if not serie.ativa %}<span class="chip">Inativa</span>{% endif %}
+            <a class="nav-item" href="{% url 'dashboard:serie_editar' serie.pk %}">{% if pode_editar %}Editar{% else %}Ver{% endif %}</a>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  {% endfor %}
+{% else %}
+  <div class="series-grid">
+    {% for serie in series %}
+      <div class="serie-card">
+        <img src="{{ serie.capa.url }}" alt="{{ serie.titulo }}">
+        <div class="serie-card-body">
+          <div class="serie-card-title">{{ serie.titulo }}</div>
+          <div class="muted">{{ serie.quantidade_episodios }} episódio{{ serie.quantidade_episodios|pluralize }} · {{ serie.data_lancamento|date:"m/Y" }}</div>
+          {% if not serie.ativa %}<span class="chip">Inativa</span>{% endif %}
+          <a class="nav-item" href="{% url 'dashboard:serie_editar' serie.pk %}">{% if pode_editar %}Editar{% else %}Ver{% endif %}</a>
+        </div>
+      </div>
+    {% empty %}
+      <div class="empty-note">Nenhuma série cadastrada ainda.</div>
+    {% endfor %}
+  </div>
+{% endif %}
+{% endblock %}

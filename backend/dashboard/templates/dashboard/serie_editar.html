@@ -1,0 +1,131 @@
+{% extends 'dashboard/base.html' %}
+{% block page_title %}{{ serie.titulo }}{% endblock %}
+{% block topbar_actions %}
+  {% if not serie.ativa %}<span class="chip">Inativa</span>{% else %}<span class="chip primary">Ativa</span>{% endif %}
+{% endblock %}
+{% block content %}
+
+<form method="post" enctype="multipart/form-data">
+  {% csrf_token %}
+  <div class="serie-editor">
+    <div class="cover-card">
+      <div class="cover-preview {% if not serie.capa %}empty{% endif %}">
+        {% if serie.capa %}
+          <img src="{{ serie.capa.url }}" alt="{{ serie.titulo }}">
+        {% else %}
+          Sem capa
+        {% endif %}
+      </div>
+      <div class="file-input">{{ form.capa }}</div>
+    </div>
+
+    <div class="form-card">
+      <div class="form-card-header"><h2>Dados da série</h2></div>
+
+      {% if form.campus %}
+        <label for="{{ form.campus.id_for_label }}">Campus</label>
+        {{ form.campus }}
+      {% endif %}
+
+      <label for="{{ form.titulo.id_for_label }}">Título</label>
+      {{ form.titulo }}
+
+      <label for="{{ form.descricao.id_for_label }}">Descrição</label>
+      {{ form.descricao }}
+
+      <div class="field-row">
+        <div>
+          <label for="{{ form.data_lancamento.id_for_label }}">Data de lançamento</label>
+          {{ form.data_lancamento }}
+        </div>
+        <div>
+          <label>Episódios cadastrados</label>
+          <input type="text" value="{{ serie.quantidade_episodios }}" disabled>
+        </div>
+      </div>
+
+      <label class="switch">
+        {{ form.ativa }}
+        <span class="switch-track"><span class="switch-thumb"></span></span>
+        <span class="switch-text">Série ativa (visível no app)</span>
+      </label>
+
+      {% if pode_editar %}
+        <div class="form-actions">
+          <button class="submit" type="submit">Salvar alterações</button>
+          <a class="back-link" href="{% url 'dashboard:series' %}">← Voltar pra Séries</a>
+        </div>
+      {% else %}
+        <div class="form-actions">
+          <span class="muted">Você só tem permissão pra visualizar essa série.</span>
+          <a class="back-link" href="{% url 'dashboard:series' %}">← Voltar pra Séries</a>
+        </div>
+      {% endif %}
+    </div>
+  </div>
+</form>
+
+<div class="section-head">
+  <div class="modal-section-title">Episódios</div>
+</div>
+
+<div class="table-wrap">
+  <table class="data-table">
+    <thead>
+      <tr><th>Nº</th><th>Título</th><th>YouTube</th><th>Duração</th>{% if pode_editar %}<th></th>{% endif %}</tr>
+    </thead>
+    <tbody>
+      {% for ep in serie.episodios.all %}
+        <tr>
+          <td class="ep-num">{{ ep.numero|stringformat:"02d" }}</td>
+          <td>{{ ep.titulo }}</td>
+          <td class="muted">{{ ep.youtube_url }}</td>
+          <td class="muted">{{ ep.duracao_minutos|default:"—" }} min</td>
+          {% if pode_editar %}
+            <td>
+              <div class="row-actions">
+                <button class="btn-ghost-sm" data-modal-url="{% url 'dashboard:episodio_editar' ep.pk %}" type="button">Editar</button>
+                <form method="post" action="{% url 'dashboard:episodio_excluir' ep.pk %}" onsubmit="return confirm('Remover esse episódio?');">
+                  {% csrf_token %}
+                  <button class="btn-danger-sm" type="submit">Remover</button>
+                </form>
+              </div>
+            </td>
+          {% endif %}
+        </tr>
+      {% empty %}
+        <tr><td colspan="5" class="muted">Nenhum episódio cadastrado ainda.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+{% if pode_editar %}
+  <div class="section-head">
+    <div class="modal-section-title">Adicionar episódio</div>
+  </div>
+  <div class="form-card">
+    <form method="post" action="{% url 'dashboard:episodio_criar' serie.pk %}">
+      {% csrf_token %}
+      <div class="field-row">
+        <div>
+          <label>Número</label>
+          {{ episodio_form.numero }}
+        </div>
+        <div>
+          <label>Duração (minutos)</label>
+          {{ episodio_form.duracao_minutos }}
+        </div>
+      </div>
+      <label>Título</label>
+      {{ episodio_form.titulo }}
+      <label>URL do YouTube</label>
+      {{ episodio_form.youtube_url }}
+      <div class="form-actions">
+        <button class="submit" type="submit">Adicionar episódio</button>
+      </div>
+    </form>
+  </div>
+{% endif %}
+
+{% endblock %}

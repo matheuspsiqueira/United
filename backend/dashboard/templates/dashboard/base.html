@@ -63,7 +63,9 @@
 
   <div class="nav-group">
     <div class="nav-section-label">Conteúdo</div>
-    <span class="nav-item disabled">Séries <span class="soon">em breve</span></span>
+    {% if 'series' in escopo.secoes_visiveis %}
+      <a class="nav-item {% if request.resolver_match.url_name == 'series' or request.resolver_match.url_name == 'serie_editar' %}active{% endif %}" href="{% url 'dashboard:series' %}">Séries</a>
+    {% endif %}
     <span class="nav-item disabled">Notícias <span class="soon">em breve</span></span>
     <span class="nav-item disabled">Eventos <span class="soon">em breve</span></span>
     <span class="nav-item disabled">Projetos <span class="soon">em breve</span></span>

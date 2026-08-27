@@ -122,6 +122,8 @@ class PermissaoIndividual(models.Model):
     aprova_membros = models.BooleanField(null=True, blank=True)
     edita_membros = models.BooleanField(null=True, blank=True)
     visao_geral_voluntarios = models.BooleanField(null=True, blank=True)
+    cria_conteudo = models.BooleanField(null=True)
+    edita_conteudo = models.BooleanField(null=True)
 
     def __str__(self):
         return f'Permissões individuais — {self.usuario.nome_completo}'
