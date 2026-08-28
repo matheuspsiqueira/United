@@ -3,4 +3,8 @@
 // local é reiniciado (plano free não tem subdomínio fixo).
 
 // src/config/api.js
-export const API_BASE_URL = 'https://nest-wellness-pulling-chest.trycloudflare.com/api';
+
+const LOCAL_URL = 'https://SEU-TUNEL-ATUAL.trycloudflare.com'; // cloudflared, muda toda vez que reinicia o tunnel
+const PROD_URL = 'https://igreja-united.onrender.com'; // Render, fixo, sempre no ar
+
+export const API_URL = PROD_URL; // troca pra LOCAL_URL quando quiser testar local

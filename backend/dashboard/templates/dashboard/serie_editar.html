@@ -9,14 +9,18 @@
   {% csrf_token %}
   <div class="serie-editor">
     <div class="cover-card">
-      <div class="cover-preview {% if not serie.capa %}empty{% endif %}">
-        {% if serie.capa %}
-          <img src="{{ serie.capa.url }}" alt="{{ serie.titulo }}">
-        {% else %}
-          Sem capa
-        {% endif %}
+      <div class="cover-uploader">
+        <div class="cover-preview {% if not serie.capa %}empty{% endif %}">
+          {% if serie.capa %}
+            <img src="{{ serie.capa.url }}" alt="{{ serie.titulo }}">
+          {% else %}
+            <span class="cover-preview-empty">Sem capa</span>
+          {% endif %}
+        </div>
+        <label class="cover-upload-btn" for="{{ form.capa.id_for_label }}">Alterar imagem</label>
+        <input type="file" id="{{ form.capa.id_for_label }}" name="{{ form.capa.html_name }}"
+              accept="image/*" class="visually-hidden" data-cropper data-aspect="0.6667">
       </div>
-      <div class="file-input">{{ form.capa }}</div>
     </div>
 
     <div class="form-card">
@@ -72,7 +76,7 @@
 <div class="table-wrap">
   <table class="data-table">
     <thead>
-      <tr><th>Nº</th><th>Título</th><th>YouTube</th><th>Duração</th>{% if pode_editar %}<th></th>{% endif %}</tr>
+      <tr><th>Nº</th><th>Título</th><th>YouTube</th>{% if pode_editar %}<th></th>{% endif %}</tr>
     </thead>
     <tbody>
       {% for ep in serie.episodios.all %}
@@ -80,7 +84,6 @@
           <td class="ep-num">{{ ep.numero|stringformat:"02d" }}</td>
           <td>{{ ep.titulo }}</td>
           <td class="muted">{{ ep.youtube_url }}</td>
-          <td class="muted">{{ ep.duracao_minutos|default:"—" }} min</td>
           {% if pode_editar %}
             <td>
               <div class="row-actions">
@@ -94,7 +97,7 @@
           {% endif %}
         </tr>
       {% empty %}
-        <tr><td colspan="5" class="muted">Nenhum episódio cadastrado ainda.</td></tr>
+        <tr><td colspan="4" class="muted">Nenhum episódio cadastrado ainda.</td></tr>
       {% endfor %}
     </tbody>
   </table>
@@ -107,16 +110,8 @@
   <div class="form-card">
     <form method="post" action="{% url 'dashboard:episodio_criar' serie.pk %}">
       {% csrf_token %}
-      <div class="field-row">
-        <div>
-          <label>Número</label>
-          {{ episodio_form.numero }}
-        </div>
-        <div>
-          <label>Duração (minutos)</label>
-          {{ episodio_form.duracao_minutos }}
-        </div>
-      </div>
+      <label>Número</label>
+      {{ episodio_form.numero }}
       <label>Título</label>
       {{ episodio_form.titulo }}
       <label>URL do YouTube</label>

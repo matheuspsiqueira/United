@@ -13,4 +13,4 @@ class SerieForm(forms.ModelForm):
 class EpisodioForm(forms.ModelForm):
     class Meta:
         model = Episodio
-        fields = ('numero', 'titulo', 'youtube_url', 'duracao_minutos')
+        fields = ('numero', 'titulo', 'youtube_url')

@@ -258,7 +258,7 @@ tr.row-clickable { cursor: pointer; }
 /* ======== SERIES ======== */
 .series-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 16px; margin-bottom: 24px; }
 .serie-card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; overflow: hidden; }
-.serie-card img { width: 100%; aspect-ratio: 16/9; object-fit: cover; display: block; }
+.serie-card img { width: 100%; aspect-ratio: 2/3; object-fit: cover; display: block; }
 .serie-card-body { padding: 12px 14px; display: flex; flex-direction: column; gap: 6px; }
 .serie-card-title { font-size: 13.5px; font-weight: 600; }
 
@@ -268,24 +268,40 @@ tr.row-clickable { cursor: pointer; }
 
 .cover-card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 16px; }
 .cover-preview {
-  width: 100%; aspect-ratio: 16/9; border-radius: 10px; overflow: hidden;
+  width: 100%; aspect-ratio: 2/3; border-radius: 10px; overflow: hidden;
   background: var(--surface-elevated); border: 1px solid var(--border); margin-bottom: 12px;
 }
 .cover-preview img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .cover-preview.empty { display: flex; align-items: center; justify-content: center; color: var(--text-secondary); font-size: 11.5px; }
 
-.file-input { position: relative; }
-.file-input input[type="file"] {
-  width: 100%; font-size: 12px; color: var(--text-secondary);
-  background: var(--surface-elevated); border: 1px solid var(--border); border-radius: 8px;
-  padding: 8px; cursor: pointer;
+/* upload de capa sem mostrar caminho do arquivo */
+.visually-hidden {
+  position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+  overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0;
 }
-.file-input input[type="file"]::file-selector-button {
-  background: var(--surface); border: 1px solid var(--border); color: var(--text-primary);
-  border-radius: 6px; padding: 6px 10px; font-size: 11.5px; font-weight: 600; cursor: pointer;
-  margin-right: 10px; font-family: 'Inter', sans-serif;
+.cover-uploader { display: flex; flex-direction: column; gap: 10px; }
+.cover-upload-btn {
+  display: block; text-align: center; background: var(--surface-elevated); border: 1px solid var(--border);
+  color: var(--text-primary); border-radius: 8px; padding: 9px; font-size: 12.5px; font-weight: 600;
+  cursor: pointer; font-family: 'Inter', sans-serif;
 }
-.file-input input[type="file"]::file-selector-button:hover { border-color: var(--accent); }
+.cover-upload-btn:hover { border-color: var(--accent); }
+.cover-preview-empty { color: var(--text-secondary); font-size: 11.5px; }
+
+/* cropper */
+.cropper-overlay {
+  display: none !important; position: fixed; inset: 0; background: rgba(0,0,0,0.75);
+  z-index: 60; align-items: center; justify-content: center;
+}
+.cropper-overlay.show { display: flex !important; }
+/* IMPORTANTE: essa classe NÃO pode se chamar "cropper-modal" — o Cropper.js já usa
+   esse nome internamente pra desenhar a camada escura fora da área de recorte
+   (background preto + opacity 0.5). Reusar o nome faz o CSS da lib "vazar" pro
+   nosso card inteiro, deixando tudo (inclusive os botões) esmaecido. */
+.cropper-dialog { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; width: 420px; max-width: 92vw; overflow: hidden; }
+.cropper-stage { height: 480px; background: var(--surface-elevated); overflow: hidden; position: relative; }
+.cropper-stage img { display: block; max-width: 100%; }
+.cropper-hint { padding: 10px 22px 0; font-size: 11.5px; color: var(--text-secondary); }
 
 .form-card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 22px; }
 .form-card .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
@@ -296,7 +312,11 @@ tr.row-clickable { cursor: pointer; }
   font-family: 'JetBrains Mono', monospace; text-transform: uppercase; letter-spacing: 0.3px;
 }
 .form-card label:first-child { margin-top: 0; }
+
+/* CORRIGIDO: adicionado number e url, que antes ficavam de fora e herdavam o
+   fundo branco padrão do navegador */
 .form-card input[type="text"], .form-card input[type="date"],
+.form-card input[type="number"], .form-card input[type="url"],
 .form-card textarea, .form-card select {
   width: 100%; background: var(--surface-elevated); border: 1px solid var(--border); border-radius: 8px;
   padding: 10px 12px; color: var(--text-primary); font-size: 13.5px; font-family: 'Inter', sans-serif;
@@ -327,6 +347,18 @@ tr.row-clickable { cursor: pointer; }
 .switch input:checked + .switch-track { background: var(--accent-glow); border-color: var(--accent); }
 .switch input:checked + .switch-track .switch-thumb { transform: translateX(16px); background: var(--accent); }
 .switch-text { font-size: 12.5px; font-weight: 600; color: var(--text-primary); }
+
+/* CORRIGIDO (novo): .form-card label já define display:block, uppercase,
+   letter-spacing e margin-top:14px pra QUALQUER label dentro dele — isso tem
+   mais especificidade que a regra genérica .switch sozinha (0,2,0 contra 0,1,0)
+   e vencia, esmagando o toggle em cima do texto. Essa regra usa a mesma
+   especificidade de .form-card label (0,2,0) mas vem depois no arquivo, então
+   sobrescreve o bloco de cima especificamente para o toggle. */
+.form-card label.switch {
+  display: flex; align-items: center; gap: 10px; cursor: pointer;
+  text-transform: none; letter-spacing: normal; font-family: 'Inter', sans-serif;
+  font-size: 12.5px; margin-top: 14px;
+}
 
 /* seção de episódios */
 .section-head { display: flex; align-items: center; justify-content: space-between; margin: 28px 0 14px; }

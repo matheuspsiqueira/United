@@ -9,6 +9,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="{% static 'dashboard/css/tokens.css' %}">
   <link rel="stylesheet" href="{% static 'dashboard/css/base.css' %}">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.2/cropper.min.css">
   {% block extra_css %}{% endblock %}
 </head>
 <body{% if escopo.campus %} style="--accent: {{ escopo.campus.cor_tema }}; --accent-glow: {{ escopo.campus.cor_tema }}29;"{% endif %}>
@@ -121,6 +122,25 @@
 <div class="modal-overlay" id="modalOverlay"></div>
 <div class="modal-root" id="modalRoot"></div>
 
+<div class="cropper-overlay" id="cropperOverlay">
+  <div class="cropper-dialog">
+    <div class="modal-header">
+      <h3>Ajustar imagem</h3>
+      <button type="button" class="modal-close" id="cropperCancel">✕</button>
+    </div>
+    <p class="cropper-hint">Arraste e use o zoom pra enquadrar como vai aparecer no card do app.</p>
+    <div class="cropper-stage">
+      <img id="cropperImage" alt="">
+    </div>
+    <div class="modal-footer row" style="padding: 16px 22px;">
+      <button type="button" class="reset-btn" id="cropperCancelBtn">Cancelar</button>
+      <button type="button" class="submit" id="cropperApply">Aplicar corte</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.2/cropper.min.js"></script>
+
 <script>
   const sidebar = document.getElementById('sidebar');
   const sideOverlay = document.getElementById('sidebarOverlay');
@@ -178,6 +198,100 @@
     }).finally(() => {
       window.location.reload();
     });
+  });
+
+  let cropperAtivo = null;
+
+  document.addEventListener('change', (e) => {
+    const input = e.target.closest('input[type="file"][data-cropper]');
+    if (!input || !input.files[0]) return;
+
+    const arquivo = input.files[0];
+    const aspecto = parseFloat(input.dataset.aspect || '0.6667');
+    const overlay = document.getElementById('cropperOverlay');
+    const imgEl = document.getElementById('cropperImage');
+
+    const leitor = new FileReader();
+    leitor.onload = (ev) => {
+      imgEl.src = ev.target.result;
+      overlay.classList.add('show');
+      overlay.dataset.targetInput = input.id;
+      overlay.dataset.aspect = aspecto;
+      overlay.dataset.fileName = arquivo.name.replace(/\.[^.]+$/, '') + '.jpg';
+
+      if (cropperAtivo) cropperAtivo.destroy();
+      cropperAtivo = new Cropper(imgEl, {
+        aspectRatio: aspecto,
+        viewMode: 1,
+        autoCropArea: 1,
+        background: false,
+      });
+    };
+    leitor.readAsDataURL(arquivo);
+  });
+
+  function fecharCropper() {
+    const overlay = document.getElementById('cropperOverlay');
+    if (overlay) overlay.classList.remove('show');
+    if (cropperAtivo) {
+      try { cropperAtivo.destroy(); } catch (err) { /* já destruído, ignora */ }
+      cropperAtivo = null;
+    }
+  }
+
+  document.getElementById('cropperCancel').addEventListener('click', fecharCropper);
+  document.getElementById('cropperCancelBtn').addEventListener('click', fecharCropper);
+
+  // fecha clicando no fundo escuro, fora do card
+  document.getElementById('cropperOverlay').addEventListener('click', (e) => {
+    if (e.target.id === 'cropperOverlay') fecharCropper();
+  });
+
+  // fecha com a tecla Esc
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') fecharCropper();
+  });
+
+  // garante que o modal comece fechado sempre — inclusive quando o navegador
+  // restaura a página do bfcache (voltar/avançar), cenário que travou antes.
+  document.addEventListener('DOMContentLoaded', fecharCropper);
+  window.addEventListener('pageshow', (e) => {
+    if (e.persisted) {
+      fecharCropper();
+      document.getElementById('modalOverlay')?.classList.remove('show');
+      document.getElementById('modalRoot')?.classList.remove('show');
+    }
+  });
+
+  document.getElementById('cropperApply').addEventListener('click', () => {
+    if (!cropperAtivo) return;
+    const overlay = document.getElementById('cropperOverlay');
+    const input = document.getElementById(overlay.dataset.targetInput);
+    if (!input) { fecharCropper(); return; }
+
+    const aspecto = parseFloat(overlay.dataset.aspect || '0.6667');
+    const nomeArquivo = overlay.dataset.fileName || 'capa.jpg';
+
+    // saída em resolução maior, calculada direto pela proporção travada
+    // (em vez de getData(), que podia arredondar e distorcer levemente)
+    const larguraSaida = 1200;
+    const alturaSaida = Math.round(larguraSaida / aspecto);
+
+    cropperAtivo.getCroppedCanvas({ width: larguraSaida, height: alturaSaida })
+      .toBlob((blob) => {
+        const arquivoFinal = new File([blob], nomeArquivo, { type: 'image/jpeg' });
+        const dt = new DataTransfer();
+        dt.items.add(arquivoFinal);
+        input.files = dt.files;
+
+        const preview = input.closest('.cover-uploader')?.querySelector('.cover-preview');
+        if (preview) {
+          preview.classList.remove('empty');
+          preview.innerHTML = `<img src="${URL.createObjectURL(blob)}" alt="">`;
+        }
+
+        fecharCropper();
+      }, 'image/jpeg', 0.92);
   });
 </script>
 {% block extra_js %}{% endblock %}

@@ -7,9 +7,15 @@
     {% csrf_token %}
     <div class="modal-body two-col">
       <div class="col-cover">
-        <label for="{{ form.capa.id_for_label }}">Capa</label>
-        <div class="cover-preview empty" style="aspect-ratio: 3/4; margin-bottom: 8px;">Sem capa</div>
-        <div class="file-input">{{ form.capa }}</div>
+        <label>Capa</label>
+        <div class="cover-uploader">
+          <div class="cover-preview empty">
+            <span class="cover-preview-empty">Sem capa</span>
+          </div>
+          <label class="cover-upload-btn" for="{{ form.capa.id_for_label }}">Selecionar imagem</label>
+          <input type="file" id="{{ form.capa.id_for_label }}" name="{{ form.capa.html_name }}"
+                accept="image/*" class="visually-hidden" data-cropper data-aspect="1.7777">
+        </div>
       </div>
       <div class="col-fields">
         {% if form.campus %}
