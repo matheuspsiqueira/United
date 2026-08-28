@@ -4,7 +4,7 @@
 
 // src/config/api.js
 
-const LOCAL_URL = 'https://SEU-TUNEL-ATUAL.trycloudflare.com'; // cloudflared, muda toda vez que reinicia o tunnel
-const PROD_URL = 'https://igreja-united.onrender.com'; // Render, fixo, sempre no ar
+const LOCAL_URL = 'https://alternate-baby-gregory-seven.trycloudflare.com/api';
+const PROD_URL = 'https://igreja-united.onrender.com/api';
 
-export const API_URL = PROD_URL; // troca pra LOCAL_URL quando quiser testar local
+export const API_BASE_URL = LOCAL_URL; // troca pra PROD_URL quando quiser testar com o backend hospedado
