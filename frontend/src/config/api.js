@@ -5,6 +5,6 @@
 // src/config/api.js
 
 const LOCAL_URL = 'https://alternate-baby-gregory-seven.trycloudflare.com/api';
-const PROD_URL = 'https://igreja-united.onrender.com/api';
+const PROD_URL = 'https://united-ly9w.onrender.com/api';
 
-export const API_BASE_URL = LOCAL_URL; // troca pra PROD_URL quando quiser testar com o backend hospedado
+export const API_BASE_URL = PROD_URL; // troca pra PROD_URL quando quiser testar com o backend hospedado

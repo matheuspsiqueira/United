@@ -20,7 +20,8 @@
         "foregroundImage": "./src/assets/icone-untd.png",
         "backgroundColor": "#ffffff"
       },
-      "edgeToEdgeEnabled": true
+      "edgeToEdgeEnabled": true,
+      "package": "com.igrejaunited.app"
     },
     "web": {
       "favicon": "./src/assets/icone-untd.png"
@@ -28,6 +29,11 @@
     "plugins": [
       "expo-font",
       "expo-video"
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "7f27450f-3428-42b0-9e43-4944c216e02f"
+      }
+    }
   }
 }
