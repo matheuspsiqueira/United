@@ -148,7 +148,7 @@ if CLOUDINARY_CLOUD_NAME:
 STATICFILES_STORAGE = STORAGES["staticfiles"]["BACKEND"]
 
 
-STATIC_URL = 'static/'
+STATIC_URL = '/static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 
 
