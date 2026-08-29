@@ -142,6 +142,8 @@ if CLOUDINARY_CLOUD_NAME:
         "BACKEND": "cloudinary_storage.storage.MediaCloudinaryStorage",
     }
 
+# Compatibilidade: django-cloudinary-storage ainda lê o atributo antigo diretamente
+STATICFILES_STORAGE = STORAGES["staticfiles"]["BACKEND"]
 
 
 STATIC_URL = 'static/'
