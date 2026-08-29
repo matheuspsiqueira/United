@@ -1,6 +1,4 @@
 from pathlib import Path
-import os
-from dotenv import load_dotenv
 from decouple import config
 import dj_database_url
 
@@ -123,7 +121,6 @@ MEDIA_ROOT = BASE_DIR / 'media'
 
 CLOUDINARY_CLOUD_NAME = config('CLOUDINARY_CLOUD_NAME', default='')
 
-WHITENOISE_MANIFEST_STRICT = False
 WHITENOISE_USE_FINDERS = True
 
 STORAGES = {
