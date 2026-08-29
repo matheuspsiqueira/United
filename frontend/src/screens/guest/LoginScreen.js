@@ -12,6 +12,7 @@ import {
 
 import { COLORS, FONTS } from '../../theme/colors';
 import { useAuth } from '../../contexts/AuthContext';
+import GlassSurface from '../../components/GlassSurface';
 
 export default function LoginScreen() {
   const { login } = useAuth();
@@ -45,26 +46,30 @@ export default function LoginScreen() {
 
       <View style={styles.field}>
         <Text style={styles.label}>Usuário</Text>
-        <TextInput
-          style={styles.input}
-          value={usuario}
-          onChangeText={setUsuario}
-          autoCapitalize="none"
-          placeholder="seu.usuario"
-          placeholderTextColor={COLORS.textSecondary}
-        />
+        <GlassSurface style={styles.inputWrap} intensity={20}>
+          <TextInput
+            style={styles.input}
+            value={usuario}
+            onChangeText={setUsuario}
+            autoCapitalize="none"
+            placeholder="seu.usuario"
+            placeholderTextColor={COLORS.textSecondary}
+          />
+        </GlassSurface>
       </View>
 
       <View style={styles.field}>
         <Text style={styles.label}>Senha</Text>
-        <TextInput
-          style={styles.input}
-          value={senha}
-          onChangeText={setSenha}
-          secureTextEntry
-          placeholder="••••••••"
-          placeholderTextColor={COLORS.textSecondary}
-        />
+        <GlassSurface style={styles.inputWrap} intensity={20}>
+          <TextInput
+            style={styles.input}
+            value={senha}
+            onChangeText={setSenha}
+            secureTextEntry
+            placeholder="••••••••"
+            placeholderTextColor={COLORS.textSecondary}
+          />
+        </GlassSurface>
       </View>
 
       {erro && <Text style={styles.erroText}>{erro}</Text>}
@@ -102,11 +107,11 @@ const styles = StyleSheet.create({
     color: COLORS.textSecondary,
     marginBottom: 6,
   },
-  input: {
-    backgroundColor: COLORS.surface,
-    borderWidth: 1,
-    borderColor: COLORS.border,
+  inputWrap: {
     borderRadius: 10,
+  },
+  input: {
+    backgroundColor: 'transparent',
     paddingHorizontal: 14,
     paddingVertical: 12,
     fontFamily: FONTS.bodyRegular,

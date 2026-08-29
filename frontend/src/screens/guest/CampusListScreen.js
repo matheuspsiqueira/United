@@ -4,6 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 
 import { COLORS, FONTS } from '../../theme/colors';
 import { REGIOES, CAMPUSES } from '../../data/mockData';
+import GlassSurface from '../../components/GlassSurface';
 
 const sections = REGIOES.map((regiao) => ({
   title: regiao,
@@ -23,18 +24,19 @@ export default function CampusListScreen({ navigation }) {
       )}
       renderItem={({ item }) => (
         <TouchableOpacity
-          style={styles.row}
           activeOpacity={0.8}
           onPress={() => navigation.navigate('CampusDetail', { campusId: item.id })}
         >
-          <View style={[styles.spine, { backgroundColor: item.corTema }]} />
-          <View style={styles.rowText}>
-            <Text style={styles.nome}>{item.nome}</Text>
-            <Text style={styles.endereco} numberOfLines={1}>
-              {item.endereco}
-            </Text>
-          </View>
-          <Ionicons name="chevron-forward" size={18} color={COLORS.textSecondary} />
+          <GlassSurface style={styles.row}>
+            <View style={[styles.spine, { backgroundColor: item.corTema }]} />
+            <View style={styles.rowText}>
+              <Text style={styles.nome}>{item.nome}</Text>
+              <Text style={styles.endereco} numberOfLines={1}>
+                {item.endereco}
+              </Text>
+            </View>
+            <Ionicons name="chevron-forward" size={18} color={COLORS.textSecondary} />
+          </GlassSurface>
         </TouchableOpacity>
       )}
     />
@@ -55,10 +57,8 @@ const styles = StyleSheet.create({
   row: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: COLORS.surface,
     borderRadius: 12,
     marginBottom: 10,
-    overflow: 'hidden',
   },
   spine: { width: 4, alignSelf: 'stretch' },
   rowText: { flex: 1, paddingVertical: 14, paddingHorizontal: 14 },

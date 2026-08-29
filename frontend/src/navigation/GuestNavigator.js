@@ -6,7 +6,7 @@ import CampusListScreen from '../screens/guest/CampusListScreen';
 import CampusDetailScreen from '../screens/guest/CampusDetailScreen';
 import LoginScreen from '../screens/guest/LoginScreen';
 import BibliaScreen from '../screens/BibliaScreen';
-import SobreUnitedScreen from '../screens/SobreUnitedScreen';
+import SobreUnitedScreen from '../screens/guest/CampusDetailScreen';
 import { COLORS, FONTS } from '../theme/colors';
 
 const Stack = createNativeStackNavigator();
