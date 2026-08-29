@@ -26,6 +26,7 @@ def debug_static(request):
     })
 
 urlpatterns = [
+    path('debug-static/', debug_static),
     path('', RedirectView.as_view(pattern_name='dashboard:home', permanent=False)),
     path('admin/', admin.site.urls),
     path('api/', include('campus.urls')),
