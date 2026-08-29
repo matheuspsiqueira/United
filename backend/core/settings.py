@@ -123,6 +123,8 @@ MEDIA_ROOT = BASE_DIR / 'media'
 
 CLOUDINARY_CLOUD_NAME = config('CLOUDINARY_CLOUD_NAME', default='')
 
+WHITENOISE_MANIFEST_STRICT = False
+
 STORAGES = {
     "default": {
         "BACKEND": "django.core.files.storage.FileSystemStorage",
