@@ -1,4 +1,4 @@
-
+//src/services/bibliaApi.js
 const BASE_URL = 'https://api.midvash.com/v1';
 
 

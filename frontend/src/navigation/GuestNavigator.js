@@ -3,16 +3,20 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
 import GuestHomeScreen from '../screens/guest/GuestHomeScreen';
 import CampusListScreen from '../screens/guest/CampusListScreen';
-import CampusDetailScreen from '../screens/guest/CampusDetailScreen';
 import LoginScreen from '../screens/guest/LoginScreen';
 import BibliaScreen from '../screens/BibliaScreen';
-import SobreUnitedScreen from '../screens/guest/CampusDetailScreen';
+import SeletorBibliaScreen from '../screens/modals/SeletorBibliaScreen';
+import SobreUnitedScreen from '../screens/SobreUnitedScreen';
+import SobreCampusScreen from '../screens/SobreCampusScreen';
 import { COLORS, FONTS } from '../theme/colors';
 
 const Stack = createNativeStackNavigator();
 
-// Bíblia e Sobre a United são as MESMAS telas usadas no app autenticado —
-// nenhum conteúdo especial de visitante nelas, só reaproveitando.
+// Bíblia, Sobre a United e Sobre o Campus são as MESMAS telas usadas no app
+// autenticado — nenhum conteúdo especial de visitante nelas, só reaproveitando.
+// SobreCampusScreen aceita campusId por parâmetro, então serve tanto pro
+// campus do usuário logado quanto pro campus que o visitante escolheu na lista.
+// Só Login e CampusList são exclusivos de quem não está logado.
 export default function GuestNavigator() {
   return (
     <Stack.Navigator
@@ -29,6 +33,11 @@ export default function GuestNavigator() {
       />
       <Stack.Screen name="Biblia" component={BibliaScreen} options={{ title: 'Bíblia' }} />
       <Stack.Screen
+        name="SeletorBiblia"
+        component={SeletorBibliaScreen}
+        options={{ presentation: 'modal', animation: 'slide_from_bottom', headerShown: false }}
+      />
+      <Stack.Screen
         name="SobreUnited"
         component={SobreUnitedScreen}
         options={{ title: 'Sobre a United' }}
@@ -39,8 +48,8 @@ export default function GuestNavigator() {
         options={{ title: 'Encontre um campus' }}
       />
       <Stack.Screen
-        name="CampusDetail"
-        component={CampusDetailScreen}
+        name="SobreCampus"
+        component={SobreCampusScreen}
         options={{ title: '' }}
       />
       <Stack.Screen name="Login" component={LoginScreen} options={{ title: 'Entrar' }} />

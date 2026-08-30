@@ -1,6 +1,5 @@
 import React from 'react';
-import { View, Text, SectionList, TouchableOpacity, StyleSheet } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { View, Text, SectionList, StyleSheet } from 'react-native';
 
 import { COLORS, FONTS } from '../../theme/colors';
 import { REGIOES, CAMPUSES } from '../../data/mockData';
@@ -11,7 +10,12 @@ const sections = REGIOES.map((regiao) => ({
   data: CAMPUSES.filter((c) => c.regiao === regiao),
 }));
 
-export default function CampusListScreen({ navigation }) {
+// Lista ainda vem do mockData — nem todos os campi foram cadastrados no
+// backend ainda. Por isso os cards NÃO são clicáveis: navegar pra
+// 'SobreCampus' com um campusId que não existe na API quebra a tela.
+// Quando o cadastro dos campi no backend estiver completo, isso volta a
+// virar TouchableOpacity + navigation.navigate('SobreCampus', { campusId }).
+export default function CampusListScreen() {
   return (
     <SectionList
       style={styles.container}
@@ -23,21 +27,15 @@ export default function CampusListScreen({ navigation }) {
         <Text style={styles.sectionHeader}>{section.title}</Text>
       )}
       renderItem={({ item }) => (
-        <TouchableOpacity
-          activeOpacity={0.8}
-          onPress={() => navigation.navigate('CampusDetail', { campusId: item.id })}
-        >
-          <GlassSurface style={styles.row}>
-            <View style={[styles.spine, { backgroundColor: item.corTema }]} />
-            <View style={styles.rowText}>
-              <Text style={styles.nome}>{item.nome}</Text>
-              <Text style={styles.endereco} numberOfLines={1}>
-                {item.endereco}
-              </Text>
-            </View>
-            <Ionicons name="chevron-forward" size={18} color={COLORS.textSecondary} />
-          </GlassSurface>
-        </TouchableOpacity>
+        <GlassSurface style={styles.row}>
+          <View style={[styles.spine, { backgroundColor: item.corTema }]} />
+          <View style={styles.rowText}>
+            <Text style={styles.nome}>{item.nome}</Text>
+            <Text style={styles.endereco} numberOfLines={1}>
+              {item.endereco}
+            </Text>
+          </View>
+        </GlassSurface>
       )}
     />
   );

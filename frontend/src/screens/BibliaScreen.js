@@ -261,7 +261,8 @@ export default function BibliaScreen({ navigation, route }) {
   const slugLivroAtivo = slugLivro(livroAtivo);
 
   const abrirPicker = () => {
-    navigation.getParent().navigate('SeletorBiblia', {
+    const nav = navigation.getParent() ?? navigation;
+    nav.navigate('SeletorBiblia', {
       livros,
       livroAtivoSlug: slugLivroAtivo,
       capituloAtivo,
