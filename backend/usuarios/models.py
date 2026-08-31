@@ -53,6 +53,19 @@ class VersiculoFavorito(models.Model):
         return f'{self.usuario.nome_completo} — {self.verse_id}'
 
 
+class PosicaoLeituraBiblia(models.Model):
+    usuario = models.OneToOneField(
+        Usuario, on_delete=models.CASCADE, related_name='posicao_leitura_biblia'
+    )
+    versao = models.CharField(max_length=10, default='nvi')
+    livro_slug = models.CharField(max_length=50)
+    capitulo = models.PositiveSmallIntegerField(default=1)
+    atualizado_em = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f'{self.usuario} — {self.livro_slug} {self.capitulo} ({self.versao})'
+
+
 class CadastroPendente(models.Model):
     STATUS_CHOICES = [
         ('pendente', 'Pendente'),

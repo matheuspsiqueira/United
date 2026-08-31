@@ -10,7 +10,6 @@ import {
   useWindowDimensions,
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 
@@ -19,6 +18,7 @@ import { getCampusAccent } from '../theme/campusAccent';
 import GlassSurface from '../components/GlassSurface';
 import { getLivros, getCapitulo } from '../services/bibliaApi';
 import { getGrifos, salvarGrifo, removerGrifoApi } from '../services/versiculosApi';
+import { getPosicaoLeitura, salvarPosicaoLeitura } from '../services/bibliaProgressoApi';
 import { useAuth } from '../contexts/AuthContext';
 import { nomeLocalizado, slugLivro } from '../utils/bibliaHelpers';
 
@@ -32,8 +32,6 @@ const HIGHLIGHT_LIST = Object.values(HIGHLIGHT_COLORS);
 const MENU_WIDTH = 232;
 const MENU_HEIGHT = 52;
 const TAB_BAR_RESERVA = 130;
-
-const STORAGE_KEY_POSICAO = '@united:biblia:posicao';
 
 export default function BibliaScreen({ navigation, route }) {
   const { token, usuario } = useAuth();
@@ -81,8 +79,12 @@ export default function BibliaScreen({ navigation, route }) {
     return () => { cancelado = true; };
   }, [token]);
 
+  // Carrega os livros e decide o ponto de partida da leitura.
+  // Logado: busca a última posição salva no backend (por usuário, não por
+  // aparelho). Deslogado: sempre começa do primeiro livro, capítulo 1.
   useEffect(() => {
     let cancelado = false;
+    setPosicaoRestaurada(false);
     setLivrosCarregando(true);
     setLivrosErro(null);
 
@@ -96,18 +98,19 @@ export default function BibliaScreen({ navigation, route }) {
         let capituloInicial = 1;
         let versaoInicial = 'nvi';
 
-        try {
-          const salvo = await AsyncStorage.getItem(STORAGE_KEY_POSICAO);
-          if (salvo) {
-            const posicao = JSON.parse(salvo);
-            const livroSalvo = lista.find((l) => slugLivro(l) === posicao.livroSlug);
-            if (livroSalvo) {
-              livroInicial = livroSalvo;
-              capituloInicial = posicao.capitulo || 1;
-              versaoInicial = posicao.versao || 'nvi';
+        if (token) {
+          try {
+            const posicao = await getPosicaoLeitura(token);
+            if (posicao?.livro_slug) {
+              const livroSalvo = lista.find((l) => slugLivro(l) === posicao.livro_slug);
+              if (livroSalvo) {
+                livroInicial = livroSalvo;
+                capituloInicial = posicao.capitulo || 1;
+                versaoInicial = posicao.versao || 'nvi';
+              }
             }
-          }
-        } catch (e) {}
+          } catch (e) {}
+        }
 
         if (cancelado) return;
         if (livroInicial) setLivroAtivo(livroInicial);
@@ -123,7 +126,7 @@ export default function BibliaScreen({ navigation, route }) {
       });
 
     return () => { cancelado = true; };
-  }, []);
+  }, [token]);
 
   useEffect(() => {
     if (!route?.params?.verseIdAlvo) return;
@@ -175,16 +178,15 @@ export default function BibliaScreen({ navigation, route }) {
     return () => { cancelado = true; };
   }, [livroAtivo, capituloAtivo, versao]);
 
+  // Salva a posição de leitura no backend — só pra usuário logado. Sem
+  // login, não persiste em lugar nenhum (nem local, nem servidor).
   useEffect(() => {
-    if (!posicaoRestaurada || !livroAtivo) return;
+    if (!posicaoRestaurada || !livroAtivo || !token) return;
     const slug = slugLivro(livroAtivo);
     if (!slug) return;
 
-    AsyncStorage.setItem(
-      STORAGE_KEY_POSICAO,
-      JSON.stringify({ versao, livroSlug: slug, capitulo: capituloAtivo })
-    ).catch(() => {});
-  }, [posicaoRestaurada, versao, livroAtivo, capituloAtivo]);
+    salvarPosicaoLeitura(token, { versao, livroSlug: slug, capitulo: capituloAtivo }).catch(() => {});
+  }, [posicaoRestaurada, versao, livroAtivo, capituloAtivo, token]);
 
   const totalCapitulos = livroAtivo?.chapters || livroAtivo?.totalChapters || 1;
 

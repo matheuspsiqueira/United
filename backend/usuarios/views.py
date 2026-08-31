@@ -8,7 +8,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from .models import VersiculoFavorito
-from .serializers import UsuarioSerializer, UsuarioUpdateSerializer, VersiculoFavoritoSerializer
+from .serializers import UsuarioSerializer, UsuarioUpdateSerializer, VersiculoFavoritoSerializer, PosicaoLeituraBiblia, PosicaoLeituraBibliaSerializer
 
 
 class LoginView(APIView):
@@ -125,3 +125,24 @@ class VersiculoFavoritoDetailView(APIView):
         if not apagados:
             return Response(status=status.HTTP_404_NOT_FOUND)
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class PosicaoLeituraBibliaView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        posicao = PosicaoLeituraBiblia.objects.filter(usuario=request.user).first()
+        if not posicao:
+            return Response(None, status=status.HTTP_200_OK)
+        return Response(PosicaoLeituraBibliaSerializer(posicao).data)
+
+    def post(self, request):
+        posicao, _ = PosicaoLeituraBiblia.objects.update_or_create(
+            usuario=request.user,
+            defaults={
+                'versao': request.data.get('versao', 'nvi'),
+                'livro_slug': request.data.get('livro_slug'),
+                'capitulo': request.data.get('capitulo', 1),
+            },
+        )
+        return Response(PosicaoLeituraBibliaSerializer(posicao).data)

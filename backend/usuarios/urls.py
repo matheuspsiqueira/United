@@ -3,6 +3,7 @@ from django.urls import path
 from .views import (
     LoginView, MeView, TrocarSenhaView,
     VersiculosFavoritosView, VersiculoFavoritoDetailView,
+    PosicaoLeituraBibliaView
 )
 
 urlpatterns = [
@@ -11,4 +12,5 @@ urlpatterns = [
     path('trocar-senha/', TrocarSenhaView.as_view()),
     path('versiculos-favoritos/', VersiculosFavoritosView.as_view()),
     path('versiculos-favoritos/<str:verse_id>/', VersiculoFavoritoDetailView.as_view()),
+    path('posicao-leitura/', PosicaoLeituraBibliaView.as_view(), name='posicao-leitura-biblia'),
 ]

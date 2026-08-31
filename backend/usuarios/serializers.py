@@ -1,7 +1,7 @@
 from rest_framework import serializers
 
 from campus.serializers import CampusSerializer
-from .models import Usuario, VersiculoFavorito
+from .models import Usuario, VersiculoFavorito, PosicaoLeituraBiblia
 
 
 class UsuarioSerializer(serializers.ModelSerializer):
@@ -38,3 +38,9 @@ class VersiculoFavoritoSerializer(serializers.ModelSerializer):
     class Meta:
         model = VersiculoFavorito
         fields = ['verse_id', 'cor']
+
+
+class PosicaoLeituraBibliaSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PosicaoLeituraBiblia
+        fields = ['versao', 'livro_slug', 'capitulo']
