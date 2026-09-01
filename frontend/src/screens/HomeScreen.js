@@ -185,10 +185,10 @@ export default function HomeScreen({ navigation }) {
                 onPress={() => navigation.navigate('Eventos')}
               />
               <AcessoRapidoItem
-                icon="book-outline"
-                label="Bíblia"
+                icon="people-outline"
+                label="uGroups"
                 accent={accent}
-                onPress={() => navigation.getParent()?.navigate('Biblia')}
+                onPress={() => navigation.navigate('UGroups')}
               />
               <AcessoRapidoItem
                 icon="location-outline"

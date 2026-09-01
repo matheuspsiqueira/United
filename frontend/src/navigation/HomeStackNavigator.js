@@ -7,6 +7,7 @@ import AgendaCultosScreen from '../screens/AgendaCultosScreen';
 import SobreUnitedScreen from '../screens/SobreUnitedScreen';
 import SobreCampusScreen from '../screens/SobreCampusScreen';
 import EventosScreen from '../screens/EventosScreen';
+import UGroupsScreen from '../screens/UGroupsScreen';
 import { COLORS, FONTS } from '../theme/colors';
 
 const Stack = createNativeStackNavigator();
@@ -17,14 +18,14 @@ export default function HomeStackNavigator() {
       screenOptions={{
         headerShown: false,
         headerStyle: { backgroundColor: COLORS.background },
-        headerShadowVisible: false, // remove a linha/sombra de baixo do header
-        headerTintColor: COLORS.textPrimary, // seta de voltar
+        headerShadowVisible: false,
+        headerTintColor: COLORS.textPrimary,
         headerTitleStyle: {
           fontFamily: FONTS.displaySemiBold,
           fontSize: 16,
           color: COLORS.textPrimary,
         },
-        headerBackTitleVisible: false, // iOS: esconde o texto ao lado da seta (< Eventos vira só <)
+        headerBackTitleVisible: false,
       }}
     >
       <Stack.Screen name="HomeMain" component={HomeScreen} />
@@ -47,6 +48,11 @@ export default function HomeStackNavigator() {
         name="Eventos"
         component={EventosScreen}
         options={{ headerShown: true }}
+      />
+      <Stack.Screen
+        name="UGroups"
+        component={UGroupsScreen}
+        options={{ headerShown: true, title: 'uGroups' }}
       />
     </Stack.Navigator>
   );

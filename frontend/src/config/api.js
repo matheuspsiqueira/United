@@ -4,7 +4,7 @@
 
 // src/config/api.js
 
-const LOCAL_URL = 'https://fundamentals-slideshow-movers-remember.trycloudflare.com/api';
+const LOCAL_URL = 'https://although-telling-postage-christine.trycloudflare.com/api';
 const PROD_URL = 'https://united-ly9w.onrender.com/api';
 
 export const API_BASE_URL = PROD_URL; // troca pra PROD_URL quando quiser testar com o backend hospedado
