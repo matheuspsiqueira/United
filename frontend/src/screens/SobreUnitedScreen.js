@@ -4,6 +4,8 @@ import { View, Text, ScrollView, StyleSheet } from 'react-native';
 import { COLORS, FONTS } from '../theme/colors';
 import GlassSurface from '../components/GlassSurface';
 
+const TAB_BAR_RESERVA = 130;
+
 const PILARES = [
   {
     titulo: 'Nossa Fé é Fundamentada',
@@ -62,7 +64,7 @@ export default function SobreUnitedScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.background },
-  content: { padding: 20, paddingBottom: 40 },
+  content: { padding: 20, paddingBottom: TAB_BAR_RESERVA },
   wordmark: {
     fontFamily: FONTS.displayBold,
     fontSize: 20,

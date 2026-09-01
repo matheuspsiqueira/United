@@ -1,3 +1,9 @@
+html, body {
+  margin: 0;
+  background: var(--bg);
+  overflow-x: hidden;
+}
+
 body { display: flex; min-height: 100vh; }
 
 .sidebar {

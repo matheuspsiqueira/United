@@ -28,6 +28,10 @@ export default function EditarDadosPessoaisScreen({ navigation }) {
   const [erroSenha, setErroSenha] = useState(null);
   const [senhaOk, setSenhaOk] = useState(false);
 
+  const [verSenhaAtual, setVerSenhaAtual] = useState(false);
+  const [verNovaSenha, setVerNovaSenha] = useState(false);
+  const [verConfirmarSenha, setVerConfirmarSenha] = useState(false);
+
   const escolherFoto = async () => {
     const permissao = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!permissao.granted) return;
@@ -95,7 +99,10 @@ export default function EditarDadosPessoaisScreen({ navigation }) {
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      >
         <View style={styles.header}>
           <Text style={styles.headerTitle}>Editar dados</Text>
           <TouchableOpacity onPress={() => navigation.goBack()}>
@@ -103,7 +110,10 @@ export default function EditarDadosPessoaisScreen({ navigation }) {
           </TouchableOpacity>
         </View>
 
-        <ScrollView contentContainerStyle={styles.content}>
+        <ScrollView
+          contentContainerStyle={styles.content}
+          keyboardShouldPersistTaps="handled"
+        >
           <TouchableOpacity style={styles.avatarWrapper} onPress={escolherFoto}>
             {fotoExibida ? (
               <Image source={{ uri: fotoExibida }} style={styles.avatar} />
@@ -161,38 +171,74 @@ export default function EditarDadosPessoaisScreen({ navigation }) {
 
           <View style={styles.field}>
             <Text style={styles.label}>Senha atual</Text>
-            <TextInput
-              style={styles.input}
-              value={senhaAtual}
-              onChangeText={setSenhaAtual}
-              secureTextEntry
-              placeholder="••••••••"
-              placeholderTextColor={COLORS.textSecondary}
-            />
+            <View style={styles.senhaWrapper}>
+              <TextInput
+                style={styles.inputSenha}
+                value={senhaAtual}
+                onChangeText={setSenhaAtual}
+                secureTextEntry={!verSenhaAtual}
+                placeholder="••••••••"
+                placeholderTextColor={COLORS.textSecondary}
+              />
+              <TouchableOpacity
+                style={styles.olhoBotao}
+                onPress={() => setVerSenhaAtual((v) => !v)}
+              >
+                <Ionicons
+                  name={verSenhaAtual ? 'eye-off' : 'eye'}
+                  size={19}
+                  color={COLORS.textSecondary}
+                />
+              </TouchableOpacity>
+            </View>
           </View>
 
           <View style={styles.field}>
             <Text style={styles.label}>Nova senha</Text>
-            <TextInput
-              style={styles.input}
-              value={novaSenha}
-              onChangeText={setNovaSenha}
-              secureTextEntry
-              placeholder="Mínimo 6 caracteres"
-              placeholderTextColor={COLORS.textSecondary}
-            />
+            <View style={styles.senhaWrapper}>
+              <TextInput
+                style={styles.inputSenha}
+                value={novaSenha}
+                onChangeText={setNovaSenha}
+                secureTextEntry={!verNovaSenha}
+                placeholder="Mínimo 6 caracteres"
+                placeholderTextColor={COLORS.textSecondary}
+              />
+              <TouchableOpacity
+                style={styles.olhoBotao}
+                onPress={() => setVerNovaSenha((v) => !v)}
+              >
+                <Ionicons
+                  name={verNovaSenha ? 'eye-off' : 'eye'}
+                  size={19}
+                  color={COLORS.textSecondary}
+                />
+              </TouchableOpacity>
+            </View>
           </View>
 
           <View style={styles.field}>
             <Text style={styles.label}>Confirmar nova senha</Text>
-            <TextInput
-              style={styles.input}
-              value={confirmarSenha}
-              onChangeText={setConfirmarSenha}
-              secureTextEntry
-              placeholder="Repita a nova senha"
-              placeholderTextColor={COLORS.textSecondary}
-            />
+            <View style={styles.senhaWrapper}>
+              <TextInput
+                style={styles.inputSenha}
+                value={confirmarSenha}
+                onChangeText={setConfirmarSenha}
+                secureTextEntry={!verConfirmarSenha}
+                placeholder="Repita a nova senha"
+                placeholderTextColor={COLORS.textSecondary}
+              />
+              <TouchableOpacity
+                style={styles.olhoBotao}
+                onPress={() => setVerConfirmarSenha((v) => !v)}
+              >
+                <Ionicons
+                  name={verConfirmarSenha ? 'eye-off' : 'eye'}
+                  size={19}
+                  color={COLORS.textSecondary}
+                />
+              </TouchableOpacity>
+            </View>
           </View>
 
           {erroSenha && <Text style={styles.erroText}>{erroSenha}</Text>}
@@ -245,6 +291,16 @@ const styles = StyleSheet.create({
     borderRadius: 10, paddingHorizontal: 14, paddingVertical: 12,
     fontFamily: FONTS.bodyRegular, fontSize: 14, color: COLORS.textPrimary,
   },
+
+  senhaWrapper: {
+    flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.surface,
+    borderWidth: 1, borderColor: COLORS.border, borderRadius: 10,
+  },
+  inputSenha: {
+    flex: 1, paddingHorizontal: 14, paddingVertical: 12,
+    fontFamily: FONTS.bodyRegular, fontSize: 14, color: COLORS.textPrimary,
+  },
+  olhoBotao: { paddingHorizontal: 12, paddingVertical: 12 },
 
   button: { backgroundColor: COLORS.textPrimary, borderRadius: 12, paddingVertical: 14, alignItems: 'center', marginTop: 4 },
   buttonText: { fontFamily: FONTS.bodySemiBold, fontSize: 15, color: COLORS.background },

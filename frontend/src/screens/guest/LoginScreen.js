@@ -9,6 +9,7 @@ import {
   Platform,
   ActivityIndicator,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 
 import { COLORS, FONTS } from '../../theme/colors';
 import { useAuth } from '../../contexts/AuthContext';
@@ -18,6 +19,7 @@ export default function LoginScreen() {
   const { login } = useAuth();
   const [usuario, setUsuario] = useState('');
   const [senha, setSenha] = useState('');
+  const [verSenha, setVerSenha] = useState(false);
   const [erro, setErro] = useState(null);
   const [loading, setLoading] = useState(false);
 
@@ -61,14 +63,26 @@ export default function LoginScreen() {
       <View style={styles.field}>
         <Text style={styles.label}>Senha</Text>
         <GlassSurface style={styles.inputWrap} intensity={20}>
-          <TextInput
-            style={styles.input}
-            value={senha}
-            onChangeText={setSenha}
-            secureTextEntry
-            placeholder="••••••••"
-            placeholderTextColor={COLORS.textSecondary}
-          />
+          <View style={styles.senhaRow}>
+            <TextInput
+              style={[styles.input, styles.inputSenha]}
+              value={senha}
+              onChangeText={setSenha}
+              secureTextEntry={!verSenha}
+              placeholder="••••••••"
+              placeholderTextColor={COLORS.textSecondary}
+            />
+            <TouchableOpacity
+              style={styles.olhoBotao}
+              onPress={() => setVerSenha((v) => !v)}
+            >
+              <Ionicons
+                name={verSenha ? 'eye-off' : 'eye'}
+                size={19}
+                color={COLORS.textSecondary}
+              />
+            </TouchableOpacity>
+          </View>
         </GlassSurface>
       </View>
 
@@ -117,6 +131,16 @@ const styles = StyleSheet.create({
     fontFamily: FONTS.bodyRegular,
     fontSize: 14,
     color: COLORS.textPrimary,
+  },
+  senhaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  inputSenha: {
+    flex: 1,
+  },
+  olhoBotao: {
+    paddingHorizontal: 14,
   },
   erroText: {
     fontFamily: FONTS.bodyRegular,
