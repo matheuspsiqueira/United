@@ -26,6 +26,7 @@ urlpatterns = [
     path('voluntarios/formulario/toggle/', views.JanelaCandidaturaToggleView.as_view(), name='janela_candidatura_toggle'),
 
     path('departamentos/', views.DepartamentosListView.as_view(), name='departamentos'),
+    path('departamentos/<int:pk>/detalhe/', views.DepartamentoDetailView.as_view(), name='departamento_detalhe'),
     path('departamentos/novo/', views.DepartamentoFormView.as_view(), name='departamento_criar'),
     path('departamentos/<int:pk>/editar/', views.DepartamentoFormView.as_view(), name='departamento_editar'),
     path('departamentos/<int:pk>/excluir/', views.DepartamentoExcluirView.as_view(), name='departamento_excluir'),

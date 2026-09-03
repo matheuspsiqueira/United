@@ -1,13 +1,14 @@
 {% extends 'dashboard/base.html' %}
 {% block page_title %}Departamentos{% endblock %}
 
-{% block topbar_actions %}
-  {% if escopo.pode_gerenciar_departamentos %}
-    <button class="approve-btn" data-modal-url="{% url 'dashboard:departamento_criar' %}">+ Novo departamento</button>
-  {% endif %}
-{% endblock %}
-
 {% block content %}
+<div class="page-header" style="display:flex; align-items:center; justify-content:space-between; margin-bottom: 1rem;">
+  <h1 style="margin:0;">Departamentos</h1>
+  {% if escopo.apostolo %}
+    <button type="button" class="approve-btn" data-modal-url="{% url 'dashboard:departamento_criar' %}">+ Novo departamento</button>
+  {% endif %}
+</div>
+
 <div class="table-wrap">
   <table class="data-table">
     <thead>
@@ -22,20 +23,20 @@
     <tbody>
       {% for d in departamentos %}
         <tr>
-          <td>{{ d.nome }}</td>
-          <td class="muted">{{ d.get_tipo_display }}</td>
-          <td class="muted">
+          <td class="row-clickable" data-modal-url="{% url 'dashboard:departamento_detalhe' d.pk %}">{{ d.nome }}</td>
+          <td class="muted row-clickable" data-modal-url="{% url 'dashboard:departamento_detalhe' d.pk %}">{{ d.get_tipo_display }}</td>
+          <td class="muted row-clickable" data-modal-url="{% url 'dashboard:departamento_detalhe' d.pk %}">
             {% with total=d.lideres.count %}
               {% for l in d.lideres.all|slice:":2" %}{{ l.nome_completo }}{% if not forloop.last %}, {% endif %}{% empty %}—{% endfor %}
-              {% if total > 2 %}...{% endif %}
+              {% if total > 2 %}... ({{ total }}){% endif %}
             {% endwith %}
           </td>
-          <td class="muted">{{ d.voluntarios.count }}</td>
+          <td class="muted row-clickable" data-modal-url="{% url 'dashboard:departamento_detalhe' d.pk %}">{{ d.voluntarios.count }}</td>
           <td>
-            {% if escopo.pode_gerenciar_departamentos %}
+            {% if escopo.apostolo %}
               <div style="display:flex; gap:6px; justify-content:flex-end;">
-                <button class="approve-btn" style="padding:6px 10px; font-size:12px;" data-modal-url="{% url 'dashboard:departamento_editar' d.pk %}">Editar</button>
-                <form method="post" action="{% url 'dashboard:departamento_excluir' d.pk %}" onsubmit="return confirm('Excluir {{ d.nome }}?');">
+                <button type="button" class="approve-btn" style="padding:6px 10px; font-size:12px;" data-modal-url="{% url 'dashboard:departamento_editar' d.pk %}">Editar</button>
+                <form method="post" action="{% url 'dashboard:departamento_excluir' d.pk %}" onsubmit="return confirm('Excluir {{ d.nome }}?');" style="margin:0;">
                   {% csrf_token %}
                   <button class="reset-btn" style="width:auto; padding:6px 10px; font-size:12px;" type="submit">Excluir</button>
                 </form>
@@ -49,4 +50,13 @@
     </tbody>
   </table>
 </div>
+
+<style>
+  .row-clickable {
+    cursor: pointer;
+  }
+  .row-clickable:hover {
+    background-color: var(--color-hover-light, rgba(0,0,0,0.03));
+  }
+</style>
 {% endblock %}

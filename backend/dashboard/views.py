@@ -901,7 +901,8 @@ class DepartamentosListView(DashboardAccessMixin, ListView):
     secao_requerida = 'departamentos'
 
     def get_queryset(self):
-        return Departamento.objects.prefetch_related('lideres', 'lideres__campus').order_by('nome')
+        qs = Departamento.objects.prefetch_related('lideres', 'lideres__campus').order_by('nome')
+        return qs
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
@@ -909,7 +910,38 @@ class DepartamentosListView(DashboardAccessMixin, ListView):
         return ctx
 
 
+class DepartamentoDetailView(DashboardAccessMixin, View):
+    """
+    Mostra detalhes completos de um departamento.
+    - Apóstolo: vê tudo de todos os campi
+    - Pastor: vê tudo, mas apenas de seu campus
+    """
+    secao_requerida = 'departamentos'
+
+    def get(self, request, *args, **kwargs):
+        departamento = get_object_or_404(Departamento, pk=kwargs['pk'])
+
+        # Pega líderes do departamento
+        lideres = departamento.lideres.select_related('campus').all()
+
+        # Se pastor, filtra apenas líderes/voluntários do seu campus
+        usuario_campus = request.user.campus
+        if not self.escopo.get('apostolo'):
+            lideres = lideres.filter(campus=usuario_campus)
+
+        contexto = {
+            'departamento': departamento,
+            'lideres': lideres,
+            'total_voluntarios': departamento.voluntarios.count(),
+            'escopo': self.escopo,
+        }
+        return render(request, 'dashboard/partials/departamento_detail_modal.html', contexto)
+
+
 class DepartamentoFormView(DashboardAccessMixin, View):
+    """
+    Cria ou edita um departamento. Restrito a apóstolo.
+    """
     secao_requerida = 'departamentos'
 
     def get_departamento(self):
@@ -917,6 +949,11 @@ class DepartamentoFormView(DashboardAccessMixin, View):
         return get_object_or_404(Departamento, pk=pk) if pk else None
 
     def get(self, request, *args, **kwargs):
+        # Restringe a apóstolo
+        if not self.escopo.get('apostolo'):
+            messages.error(request, 'Apenas apóstolos podem criar ou editar departamentos.')
+            return redirect('dashboard:departamentos')
+
         departamento = self.get_departamento()
 
         campos_flags = [
@@ -939,6 +976,11 @@ class DepartamentoFormView(DashboardAccessMixin, View):
         return render(request, 'dashboard/departamento_form.html', contexto)
 
     def post(self, request, *args, **kwargs):
+        # Restringe a apóstolo
+        if not self.escopo.get('apostolo'):
+            messages.error(request, 'Apenas apóstolos podem criar ou editar departamentos.')
+            return redirect('dashboard:departamentos')
+
         departamento = self.get_departamento()
         nome = request.POST.get('nome', '').strip()
         tipo = request.POST.get('tipo')
@@ -970,9 +1012,17 @@ class DepartamentoFormView(DashboardAccessMixin, View):
 
 
 class DepartamentoExcluirView(DashboardAccessMixin, View):
+    """
+    Deleta um departamento. Restrito a apóstolo.
+    """
     secao_requerida = 'departamentos'
 
     def post(self, request, *args, **kwargs):
+        # Restringe a apóstolo
+        if not self.escopo.get('apostolo'):
+            messages.error(request, 'Apenas apóstolos podem deletar departamentos.')
+            return redirect('dashboard:departamentos')
+
         departamento = get_object_or_404(Departamento, pk=kwargs['pk'])
         nome = departamento.nome
         try:

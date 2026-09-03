@@ -33,6 +33,7 @@ def resolver_flags(base, overrides_obj):
 def _escopo_sem_acesso(usuario):
     return {
         'nivel': usuario.role, 'label': usuario.get_role_display(), 'campus': usuario.campus,
+        'apostolo': False,
         'departamentos': [], 'secoes_visiveis': [], 'visao_geral_voluntarios': False,
         'pode_aprovar_membros': False, 'pode_aprovar_voluntarios': False, 'pode_editar_membros': False,
         'pode_redefinir_senha': False, 'pode_gerenciar_permissoes': False,
@@ -49,6 +50,7 @@ def get_escopo(usuario):
     if role == 'apostolo':
         return {
             'nivel': role, 'label': 'Apóstolo/Fundador', 'campus': None, 'departamentos': [],
+            'apostolo': True,
             'secoes_visiveis': ['home', 'membros_pendentes', 'membros', 'voluntarios', 'voluntarios_pendentes', 'departamentos', 'series', 'ugroups'],
             'visao_geral_voluntarios': True, 'pode_aprovar_membros': True, 'pode_aprovar_voluntarios': True,
             'pode_editar_membros': True, 'pode_redefinir_senha': True, 'pode_gerenciar_permissoes': True,
@@ -62,7 +64,8 @@ def get_escopo(usuario):
     if role == 'pastor_presidente':
         return {
             'nivel': role, 'label': 'Pastor Presidente', 'campus': usuario.campus, 'departamentos': [],
-            'secoes_visiveis': ['home', 'membros_pendentes', 'membros', 'voluntarios', 'voluntarios_pendentes', 'series', 'ugroups'],
+            'apostolo': False,
+            'secoes_visiveis': ['home', 'membros_pendentes', 'membros', 'voluntarios', 'voluntarios_pendentes', 'departamentos', 'series', 'ugroups'],
             'visao_geral_voluntarios': True, 'pode_aprovar_membros': True, 'pode_aprovar_voluntarios': True,
             'pode_editar_membros': True, 'pode_redefinir_senha': True, 'pode_gerenciar_permissoes': True,
             'pode_gerenciar_formulario_voluntario': True,
@@ -97,6 +100,7 @@ def get_escopo(usuario):
         nomes = ', '.join(d.nome for d in departamentos) or 'sem departamento'
         return {
             'nivel': role, 'label': f'Líder — {nomes}', 'campus': usuario.campus,
+            'apostolo': False,
             'departamentos': departamentos, 'secoes_visiveis': secoes,
             'visao_geral_voluntarios': flags['visao_geral_voluntarios'],
             'pode_aprovar_membros': flags['aprova_membros'], 'pode_aprovar_voluntarios': True,
@@ -130,6 +134,7 @@ def get_escopo(usuario):
 
         return {
             'nivel': role, 'label': f'Voluntário — {departamento.nome}', 'campus': usuario.campus,
+            'apostolo': False,
             'departamentos': [departamento], 'secoes_visiveis': secoes,
             'visao_geral_voluntarios': flags['visao_geral_voluntarios'],
             'pode_aprovar_membros': flags['aprova_membros'], 'pode_aprovar_voluntarios': False,

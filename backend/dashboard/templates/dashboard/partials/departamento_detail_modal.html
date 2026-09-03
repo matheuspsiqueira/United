@@ -1,0 +1,78 @@
+<div class="modal-card wide">
+  <div class="modal-header">
+    <h3>{{ departamento.nome }}</h3>
+    <button class="modal-close" data-modal-close>&times;</button>
+  </div>
+
+  <div class="modal-body">
+    <div class="detail-section">
+      <h4>Informações gerais</h4>
+      <dl class="detail-list">
+        <dt>Tipo:</dt>
+        <dd>{{ departamento.get_tipo_display }}</dd>
+      </dl>
+    </div>
+
+    <div class="detail-section">
+      <h4>Líderes ({{ lideres.count }})</h4>
+      {% if lideres %}
+        <ul class="simple-list">
+          {% for lider in lideres %}
+            <li>
+              {{ lider.nome_completo }}
+              <span class="chip">{{ lider.campus.nome|default:"—" }}</span>
+            </li>
+          {% endfor %}
+        </ul>
+      {% else %}
+        <p class="muted">Nenhum líder atribuído a este departamento.</p>
+      {% endif %}
+    </div>
+
+    <div class="detail-section">
+      <h4>Voluntários</h4>
+      <p><strong>{{ total_voluntarios }}</strong> voluntário{{ total_voluntarios|pluralize }}</p>
+    </div>
+
+    {% if departamento.acesso_dashboard or departamento.visao_geral_voluntarios or departamento.aprova_membros or departamento.edita_membros or departamento.cria_conteudo or departamento.edita_conteudo %}
+      <div class="detail-section">
+        <h4>Permissões padrão do departamento</h4>
+        <ul class="simple-list">
+          {% if departamento.acesso_dashboard %}<li>✓ Acesso à dashboard</li>{% endif %}
+          {% if departamento.visao_geral_voluntarios %}<li>✓ Visão geral de voluntários</li>{% endif %}
+          {% if departamento.aprova_membros %}<li>✓ Aprovar membros</li>{% endif %}
+          {% if departamento.edita_membros %}<li>✓ Editar membros</li>{% endif %}
+          {% if departamento.cria_conteudo %}<li>✓ Criar conteúdo</li>{% endif %}
+          {% if departamento.edita_conteudo %}<li>✓ Editar conteúdo</li>{% endif %}
+        </ul>
+      </div>
+    {% endif %}
+
+    <div class="detail-section">
+      <h4>Escalas</h4>
+      <p class="muted">Em breve.</p>
+    </div>
+
+    {% if escopo.apostolo %}
+      <div class="modal-footer">
+        <button type="button" class="approve-btn" data-modal-url="{% url 'dashboard:departamento_editar' departamento.pk %}">Editar</button>
+        <form method="post" action="{% url 'dashboard:departamento_excluir' departamento.pk %}" onsubmit="return confirm('Excluir {{ departamento.nome }}?');" style="margin:0;">
+          {% csrf_token %}
+          <button class="reset-btn" type="submit">Excluir</button>
+        </form>
+      </div>
+    {% endif %}
+  </div>
+</div>
+
+<style>
+  .detail-section { margin-bottom: 1.25rem; }
+  .detail-section h4 {
+    font-size: 0.85rem; font-weight: 600; text-transform: uppercase;
+    letter-spacing: 0.5px; margin-bottom: 0.5rem; color: var(--color-text-secondary, #666);
+  }
+  .detail-list { display: grid; grid-template-columns: 100px 1fr; gap: 0.4rem 1rem; font-size: 0.9rem; margin: 0; }
+  .simple-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 0.4rem; font-size: 0.9rem; }
+  .simple-list li { display: flex; align-items: center; gap: 8px; }
+  .chip { display: inline-block; padding: 2px 8px; font-size: 0.75rem; border-radius: 999px; background: var(--color-bg-secondary, #f0f0f0); }
+</style>
