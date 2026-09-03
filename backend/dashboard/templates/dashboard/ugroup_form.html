@@ -1,0 +1,44 @@
+{% extends 'dashboard/base.html' %}
+{% block page_title %}{% if ugroup %}Editar uGroup{% else %}Novo uGroup{% endif %}{% endblock %}
+{% block content %}
+
+<form method="post">
+  {% csrf_token %}
+  <div class="form-card">
+    <div class="form-card-header"><h2>Dados do uGroup</h2></div>
+
+    {% if form.campus %}
+      <label for="{{ form.campus.id_for_label }}">Campus</label>
+      {{ form.campus }}
+    {% endif %}
+
+    <label for="{{ form.nome.id_for_label }}">Nome</label>
+    {{ form.nome }}
+
+    <label for="{{ form.endereco.id_for_label }}">Endereço</label>
+    {{ form.endereco }}
+
+    <div class="field-row">
+      <div>
+        <label for="{{ form.dia_semana.id_for_label }}">Dia da semana</label>
+        {{ form.dia_semana }}
+      </div>
+      <div>
+        <label for="{{ form.horario.id_for_label }}">Horário</label>
+        {{ form.horario }}
+      </div>
+    </div>
+
+    <label for="{{ form.pastor_apoio.id_for_label }}">Pastor de apoio (opcional)</label>
+    {{ form.pastor_apoio }}
+
+    <label for="{{ form.observacao.id_for_label }}">Observação (opcional)</label>
+    {{ form.observacao }}
+
+    <div class="form-actions">
+      <button class="submit" type="submit">{% if ugroup %}Salvar alterações{% else %}Criar uGroup{% endif %}</button>
+      <a class="back-link" href="{% url 'dashboard:ugroups' %}">← Voltar pra uGroups</a>
+    </div>
+  </div>
+</form>
+{% endblock %}

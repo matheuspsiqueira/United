@@ -18,7 +18,7 @@
 
 <aside class="sidebar" id="sidebar">
   <div class="brand">
-    <div class="brand-mark">United</div>
+    <div class="brand-mark">Igreja United</div>
     <div class="brand-sub">Dashboard admin</div>
   </div>
 
@@ -58,6 +58,11 @@
       {% endif %}
       {% if 'voluntarios' in escopo.secoes_visiveis %}
         <a class="nav-item {% if request.resolver_match.url_name == 'voluntarios' %}active{% endif %}" href="{% url 'dashboard:voluntarios' %}">Voluntários</a>
+      {% endif %}
+      {% if 'ugroups' in escopo.secoes_visiveis %}
+        <div class="nav-group">
+          <a class="nav-item {% if request.resolver_match.url_name == 'ugroups' %}active{% endif %}" href="{% url 'dashboard:ugroups' %}">uGroups</a>
+        </div>
       {% endif %}
     </div>
   {% endif %}

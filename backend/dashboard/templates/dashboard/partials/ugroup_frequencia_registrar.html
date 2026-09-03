@@ -1,0 +1,27 @@
+<div class="modal-card wide">
+  <div class="modal-header">
+    <h3>Registrar frequência — {{ ugroup.nome }}</h3>
+    <button type="button" data-modal-close class="modal-close">✕</button>
+  </div>
+  <div class="modal-body">
+    <form method="post" action="{% url 'dashboard:ugroup_frequencia_registrar' ugroup.pk %}">
+      {% csrf_token %}
+      <label for="{{ data_form.data.id_for_label }}">Data do encontro</label>
+      {{ data_form.data }}
+
+      <div class="modal-section-title">Presença</div>
+      <div class="checkbox-grid">
+        {% for membro in membros %}
+          <label class="checkbox-item">
+            <input type="checkbox" name="presente_{{ membro.pk }}" checked>
+            {{ membro.usuario.nome_completo }}
+          </label>
+        {% endfor %}
+      </div>
+
+      <div class="modal-footer">
+        <button class="submit" type="submit">Salvar frequência</button>
+      </div>
+    </form>
+  </div>
+</div>

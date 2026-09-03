@@ -32,6 +32,7 @@ INSTALLED_APPS = [
     'series',
     'departamentos',
     'dashboard',
+    'ugroups',
 ]
 
 MIDDLEWARE = [

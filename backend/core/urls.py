@@ -13,6 +13,7 @@ urlpatterns = [
     path('api/series/', include('series.urls')),
     path('dashboard/', include('dashboard.urls')),
     path('formulario-voluntario/', include('dashboard.urls_publico')),
+    path('api/ugroups/', include('ugroups.urls')),
 ]
 
 if settings.DEBUG:

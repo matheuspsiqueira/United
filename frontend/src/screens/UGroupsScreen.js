@@ -1,5 +1,5 @@
-import React from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image } from 'react-native';
+import React, { useState, useCallback, useEffect } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, ActivityIndicator } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -8,46 +8,46 @@ import { COLORS, FONTS } from '../theme/colors';
 import { getCampusAccent } from '../theme/campusAccent';
 import GlassSurface from '../components/GlassSurface';
 import { useAuth } from '../contexts/AuthContext';
+import { listarUGroups } from '../services/ugroupsApi';
 
-// Troque pelo asset real quando tiver a foto definida.
-// Se preferir puxar de uma URL (Cloudinary etc), troca o <Image> pra
-// source={{ uri: ... }} e remove o require.
-const HERO_IMAGE = require('../assets/ugroups-hero.png');; // ex: require('../../assets/images/ugroups-hero.jpg');
+const HERO_IMAGE = require('../assets/ugroups-hero.png');
 
-const MOCK_UGROUPS = [
-  { id: '1', nome: 'Merck', dia: 'Sexta', horario: '20h', lideres: 'Carlos e Ethayssa' },
-  { id: '2', nome: 'Mananciais', dia: 'Terça', horario: '20h', lideres: 'Alexandre e Raphaela' },
-  { id: '3', nome: 'Taquara', dia: 'Quarta', horario: '20h', lideres: 'David e Nayara' },
-  { id: '4', nome: 'Mulheres', dia: 'Sexta', horario: '20h', lideres: 'Giovanna' },
-  { id: '5', nome: 'Youth', dia: 'Sexta', horario: '20h', lideres: 'Will e Ethainá' },
-  { id: '6', nome: 'Pechincha 1', dia: 'Quarta', horario: '20h', lideres: 'Walter e Camila' },
-  { id: '7', nome: 'Pechincha 2', dia: 'Terça', horario: '20h', lideres: 'Gustavo e Bruna' },
-  { id: '8', nome: 'Tanque', dia: 'Terça', horario: '20h', lideres: 'Gabriel e Gabriella' },
-  { id: '9', nome: 'Freguesia', dia: 'Terça', horario: '20h', lideres: 'José e Juliana' },
-  { id: '10', nome: 'Caixa D\u2019Água', dia: 'Sexta', horario: '20h', lideres: 'Prs. Jackson e Danúbia', observacao: 'Quinzenal' },
-  { id: '11', nome: 'Juniores', dia: 'Sexta', horario: '20h', lideres: 'Will e Ethainá' },
-  { id: '12', nome: 'Online', dia: 'Sábado', horario: '10h', lideres: 'Matheus e Samara' },
-];
+const DIA_CURTO = {
+  segunda: 'Segunda',
+  terca: 'Terça',
+  quarta: 'Quarta',
+  quinta: 'Quinta',
+  sexta: 'Sexta',
+  sabado: 'Sábado',
+  domingo: 'Domingo',
+};
 
-function UGroupsHero({ accent }) {
+function formatarHorario(horarioStr) {
+  // vem como "20:00:00" da API (DRF TimeField)
+  const [hora, minuto] = horarioStr.split(':');
+  return minuto === '00' ? `${parseInt(hora, 10)}h` : `${parseInt(hora, 10)}h${minuto}`;
+}
+
+function formatarLideres(lideres) {
+  const nomes = lideres.map((l) => {
+    const nomeCompleto = l.nome_completo ?? l.first_name ?? '';
+    return nomeCompleto.split(' ')[0];
+  });
+  if (nomes.length === 0) return '';
+  if (nomes.length === 1) return nomes[0];
+  if (nomes.length === 2) return nomes.join(' e ');
+  return `${nomes.slice(0, -1).join(', ')} e ${nomes[nomes.length - 1]}`;
+}
+
+function UGroupsHero() {
   return (
     <View style={styles.hero}>
-      {HERO_IMAGE ? (
-        <Image source={HERO_IMAGE} style={StyleSheet.absoluteFill} resizeMode="cover" />
-      ) : (
-        <LinearGradient
-          colors={['#3C3489', '#712B13']}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={StyleSheet.absoluteFill}
-        />
-      )}
+      <Image source={HERO_IMAGE} style={StyleSheet.absoluteFill} resizeMode="cover" />
       <LinearGradient
         colors={['transparent', 'rgba(5,6,10,0.25)', 'rgba(5,6,10,0.92)']}
         style={StyleSheet.absoluteFill}
       />
       <View style={styles.heroContent}>
-        <Text style={[styles.heroEyebrow, { color: accent.light }]}>CULTOS NOS LARES</Text>
         <Text style={styles.heroTitulo}>uGroups são nossos cultos nos lares</Text>
       </View>
     </View>
@@ -60,11 +60,11 @@ function UGroupRow({ grupo, accent, onPress }) {
       <View style={{ flex: 1 }}>
         <Text style={styles.nome}>{grupo.nome}</Text>
         {grupo.observacao ? <Text style={styles.observacao}>{grupo.observacao}</Text> : null}
-        <Text style={styles.lideres}>{grupo.lideres}</Text>
+        <Text style={styles.lideres}>{formatarLideres(grupo.lideres)}</Text>
       </View>
       <View style={styles.horarioBox}>
-        <Text style={[styles.dia, { color: accent.light }]}>{grupo.dia}</Text>
-        <Text style={styles.horario}>{grupo.horario}</Text>
+        <Text style={[styles.dia, { color: accent.light }]}>{DIA_CURTO[grupo.dia_semana]}</Text>
+        <Text style={styles.horario}>{formatarHorario(grupo.horario)}</Text>
       </View>
       <Ionicons name="chevron-forward" size={18} color={COLORS.textSecondary} />
     </TouchableOpacity>
@@ -73,11 +73,31 @@ function UGroupRow({ grupo, accent, onPress }) {
 
 export default function UGroupsScreen({ navigation }) {
   const insets = useSafeAreaInsets();
-  const { usuario } = useAuth();
+  const { usuario, token } = useAuth();
   const accent = usuario?.campus?.corTema
     ? getCampusAccent(usuario.campus.corTema)
     : getCampusAccent(null);
-  const uGroups = MOCK_UGROUPS;
+
+  const [uGroups, setUGroups] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [erro, setErro] = useState(null);
+
+  const carregar = useCallback(async () => {
+    setLoading(true);
+    setErro(null);
+    try {
+      const lista = await listarUGroups(token);
+      setUGroups(lista);
+    } catch (e) {
+      setErro('Não foi possível carregar os uGroups. Puxe pra atualizar.');
+    } finally {
+      setLoading(false);
+    }
+  }, [token]);
+
+  useEffect(() => {
+    carregar();
+  }, [carregar]);
 
   return (
     <View style={styles.root}>
@@ -96,22 +116,35 @@ export default function UGroupsScreen({ navigation }) {
         style={styles.container}
         contentContainerStyle={{ padding: 16, paddingTop: insets.top + 8, paddingBottom: 130 }}
       >
-        <UGroupsHero accent={accent} />
+        <UGroupsHero />
 
-        <GlassSurface style={styles.listCard}>
-          {uGroups.map((grupo, index) => (
-            <React.Fragment key={grupo.id}>
-              <UGroupRow
-                grupo={grupo}
-                accent={accent}
-                onPress={() =>
-                  navigation.getParent()?.getParent()?.navigate('UGroupDetalhe', { uGroupId: grupo.id })
-                }
-              />
-              {index < uGroups.length - 1 && <View style={styles.divider} />}
-            </React.Fragment>
-          ))}
-        </GlassSurface>
+        {loading ? (
+          <ActivityIndicator color={accent.base} style={{ marginTop: 24 }} />
+        ) : erro ? (
+          <GlassSurface style={styles.erroCard}>
+            <Text style={styles.erroTexto}>{erro}</Text>
+            <TouchableOpacity onPress={carregar} style={[styles.retryBtn, { backgroundColor: accent.base }]}>
+              <Text style={[styles.retryTexto, { color: accent.textOnAccent }]}>Tentar de novo</Text>
+            </TouchableOpacity>
+          </GlassSurface>
+        ) : uGroups.length === 0 ? (
+          <Text style={styles.emptyText}>Nenhum uGroup cadastrado no seu campus ainda.</Text>
+        ) : (
+          <GlassSurface style={styles.listCard}>
+            {uGroups.map((grupo, index) => (
+              <React.Fragment key={grupo.id}>
+                <UGroupRow
+                  grupo={grupo}
+                  accent={accent}
+                  onPress={() =>
+                    navigation.getParent()?.getParent()?.navigate('UGroupDetalhe', { uGroupId: grupo.id })
+                  }
+                />
+                {index < uGroups.length - 1 && <View style={styles.divider} />}
+              </React.Fragment>
+            ))}
+          </GlassSurface>
+        )}
       </ScrollView>
     </View>
   );
@@ -131,18 +164,17 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     marginBottom: 20,
   },
-  heroContent: {
-    flex: 1,
-    justifyContent: 'flex-end',
-    padding: 18,
+  heroContent: { flex: 1, justifyContent: 'flex-end', padding: 18 },
+  heroTitulo: { fontSize: 20, fontFamily: FONTS.displayBold, color: COLORS.textPrimary, lineHeight: 26 },
+
+  emptyText: {
+    fontSize: 14, fontFamily: FONTS.bodyRegular, color: COLORS.textSecondary,
+    textAlign: 'center', marginTop: 24,
   },
-  heroEyebrow: { fontSize: 11, fontFamily: FONTS.mono, letterSpacing: 1, marginBottom: 6 },
-  heroTitulo: {
-    fontSize: 20,
-    fontFamily: FONTS.displayBold,
-    color: COLORS.textPrimary,
-    lineHeight: 26,
-  },
+  erroCard: { padding: 20, alignItems: 'center', gap: 12 },
+  erroTexto: { fontFamily: FONTS.bodyRegular, color: COLORS.textSecondary, textAlign: 'center' },
+  retryBtn: { paddingHorizontal: 20, paddingVertical: 10, borderRadius: 12, marginTop: 4 },
+  retryTexto: { fontFamily: FONTS.bodySemiBold, fontSize: 13 },
 
   listCard: { paddingVertical: 4, paddingHorizontal: 4, borderRadius: 20 },
   row: { flexDirection: 'row', alignItems: 'center', paddingVertical: 14, paddingHorizontal: 12, gap: 10 },

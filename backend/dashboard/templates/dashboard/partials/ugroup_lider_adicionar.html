@@ -1,0 +1,16 @@
+<div class="modal-card">
+  <div class="modal-header">
+    <h3>Adicionar líder — {{ ugroup.nome }}</h3>
+    <button type="button" data-modal-close class="modal-close">✕</button>
+  </div>
+  <div class="modal-body">
+    <form method="post" action="{% url 'dashboard:ugroup_lider_adicionar' ugroup.pk %}">
+      {% csrf_token %}
+      <label for="{{ form.lider.id_for_label }}">Líder</label>
+      {{ form.lider }}
+      <div class="modal-footer">
+        <button class="submit" type="submit">Adicionar</button>
+      </div>
+    </form>
+  </div>
+</div>

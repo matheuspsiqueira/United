@@ -1,0 +1,36 @@
+<div class="modal-card">
+  <div class="modal-header">
+    <h3>Novo uGroup</h3>
+    <button type="button" data-modal-close class="modal-close">✕</button>
+  </div>
+  <div class="modal-body">
+    <form method="post" action="{% url 'dashboard:ugroup_criar' %}">
+      {% csrf_token %}
+      {% if form.campus %}
+        <label for="{{ form.campus.id_for_label }}">Campus</label>
+        {{ form.campus }}
+      {% endif %}
+      <label for="{{ form.nome.id_for_label }}">Nome</label>
+      {{ form.nome }}
+      <label for="{{ form.endereco.id_for_label }}">Endereço</label>
+      {{ form.endereco }}
+      <div class="field-row">
+        <div>
+          <label for="{{ form.dia_semana.id_for_label }}">Dia da semana</label>
+          {{ form.dia_semana }}
+        </div>
+        <div>
+          <label for="{{ form.horario.id_for_label }}">Horário</label>
+          {{ form.horario }}
+        </div>
+      </div>
+      <label for="{{ form.pastor_apoio.id_for_label }}">Pastor de apoio (opcional)</label>
+      {{ form.pastor_apoio }}
+      <label for="{{ form.observacao.id_for_label }}">Observação (opcional)</label>
+      {{ form.observacao }}
+      <div class="modal-footer">
+        <button class="submit" type="submit">Criar uGroup</button>
+      </div>
+    </form>
+  </div>
+</div>

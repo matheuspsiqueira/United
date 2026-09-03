@@ -1,6 +1,8 @@
 import calendar
 from datetime import timedelta
 
+from ugroups.models import UGroup
+
 CAMPOS_PERMISSAO = (
     'acesso_dashboard', 'aprova_membros', 'edita_membros', 'visao_geral_voluntarios',
     'cria_conteudo', 'edita_conteudo',
@@ -37,6 +39,7 @@ def _escopo_sem_acesso(usuario):
         'pode_gerenciar_formulario_voluntario': False,
         'redirect_pos_login': None, 'tem_acesso': False,
         'pode_criar_conteudo': False, 'pode_editar_conteudo': False,
+        'ugroups_liderados': [],
     }
 
 
@@ -46,26 +49,27 @@ def get_escopo(usuario):
     if role == 'apostolo':
         return {
             'nivel': role, 'label': 'Apóstolo/Fundador', 'campus': None, 'departamentos': [],
-            'secoes_visiveis': ['home', 'membros_pendentes', 'membros', 'voluntarios', 'voluntarios_pendentes', 'departamentos', 'series'],
+            'secoes_visiveis': ['home', 'membros_pendentes', 'membros', 'voluntarios', 'voluntarios_pendentes', 'departamentos', 'series', 'ugroups'],
             'visao_geral_voluntarios': True, 'pode_aprovar_membros': True, 'pode_aprovar_voluntarios': True,
             'pode_editar_membros': True, 'pode_redefinir_senha': True, 'pode_gerenciar_permissoes': True,
             'pode_gerenciar_formulario_voluntario': True,
             'redirect_pos_login': 'dashboard:home', 'tem_acesso': True,
             'pode_criar_conteudo': True,
             'pode_editar_conteudo': True,
+            'ugroups_liderados': [],
         }
 
     if role == 'pastor_presidente':
         return {
             'nivel': role, 'label': 'Pastor Presidente', 'campus': usuario.campus, 'departamentos': [],
-            'secoes_visiveis': ['home', 'membros_pendentes', 'membros', 'voluntarios', 'voluntarios_pendentes', 'series'],
+            'secoes_visiveis': ['home', 'membros_pendentes', 'membros', 'voluntarios', 'voluntarios_pendentes', 'series', 'ugroups'],
             'visao_geral_voluntarios': True, 'pode_aprovar_membros': True, 'pode_aprovar_voluntarios': True,
             'pode_editar_membros': True, 'pode_redefinir_senha': True, 'pode_gerenciar_permissoes': True,
             'pode_gerenciar_formulario_voluntario': True,
             'redirect_pos_login': 'dashboard:home', 'tem_acesso': True,
             'pode_criar_conteudo': True,
             'pode_editar_conteudo': True,
-            
+            'ugroups_liderados': [],
         }
 
     if role == 'lider':
@@ -78,12 +82,17 @@ def get_escopo(usuario):
         if not flags['acesso_dashboard']:
             return _escopo_sem_acesso(usuario)
 
+        ugroups_liderados = list(UGroup.objects.filter(lideres=usuario, ativo=True))
+
         secoes = ['home', 'voluntarios', 'voluntarios_pendentes']
         if flags['aprova_membros']:
             secoes += ['membros_pendentes', 'membros']
 
         if flags['cria_conteudo'] or flags['edita_conteudo']:
             secoes.append('series')
+
+        if ugroups_liderados:
+            secoes.append('ugroups')
 
         nomes = ', '.join(d.nome for d in departamentos) or 'sem departamento'
         return {
@@ -96,6 +105,7 @@ def get_escopo(usuario):
             'redirect_pos_login': 'dashboard:home', 'tem_acesso': True,
             'pode_criar_conteudo': flags['cria_conteudo'],
             'pode_editar_conteudo': flags['edita_conteudo'],
+            'ugroups_liderados': ugroups_liderados,
         }
 
     if role == 'voluntario':
@@ -128,6 +138,7 @@ def get_escopo(usuario):
             'redirect_pos_login': redirect, 'tem_acesso': True,
             'pode_criar_conteudo': flags['cria_conteudo'],
             'pode_editar_conteudo': flags['edita_conteudo'],
+            'ugroups_liderados': [],
         }
 
     return _escopo_sem_acesso(usuario)
@@ -148,8 +159,6 @@ def data_inicio_periodo(periodo, referencia):
         return referencia - timedelta(days=7)
     if periodo == 'mes':
         return subtrair_meses(referencia, 1)
-    if periodo == '6meses':
-        return subtrair_meses(referencia, 6)
     if periodo == '6meses':
         return subtrair_meses(referencia, 6)
     if periodo == 'ano':

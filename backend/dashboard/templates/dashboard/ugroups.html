@@ -1,0 +1,75 @@
+{% extends 'dashboard/base.html' %}
+{% block page_title %}uGroups{% endblock %}
+{% block topbar_actions %}
+  {% if campi %}
+    <div class="viewer-control">
+      <span class="label">Visualizar</span>
+      <select id="viewerCampus" onchange="mudarCampusVisualizacao(this.value)">
+        <option value="">Todos os campi</option>
+        {% for c in campi %}
+          <option value="{{ c.id }}" {% if campus_filtro_id == c.id %}selected{% endif %}>{{ c.nome }}</option>
+        {% endfor %}
+      </select>
+    </div>
+  {% endif %}
+  {% if pode_gerenciar %}
+    <a class="approve-btn" data-modal-url="{% url 'dashboard:ugroup_criar' %}">+ Novo uGroup</a>
+  {% endif %}
+{% endblock %}
+{% block content %}
+
+{% if ugroups_por_campus %}
+  {% for campus, lista in ugroups_por_campus %}
+    <div class="modal-section-title">{{ campus.nome }}</div>
+    <div class="table-wrap">
+      <table class="data-table">
+        <thead><tr><th>Nome</th><th>Dia</th><th>Horário</th><th>Membros</th><th></th></tr></thead>
+        <tbody>
+          {% for ugroup in lista %}
+            <tr>
+              <td>{{ ugroup.nome }}</td>
+              <td>{{ ugroup.get_dia_semana_display }}</td>
+              <td>{{ ugroup.horario|time:"H:i" }}</td>
+              <td>{{ ugroup.membros.count }}</td>
+              <td><a class="nav-item" href="{% url 'dashboard:ugroup_detalhe' ugroup.pk %}">Abrir</a></td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% endfor %}
+{% else %}
+  <div class="table-wrap">
+    <table class="data-table">
+      <thead><tr><th>Nome</th><th>Dia</th><th>Horário</th><th>Membros</th><th></th></tr></thead>
+      <tbody>
+        {% for ugroup in ugroups %}
+          <tr>
+            <td>{{ ugroup.nome }}</td>
+            <td>{{ ugroup.get_dia_semana_display }}</td>
+            <td>{{ ugroup.horario|time:"H:i" }}</td>
+            <td>{{ ugroup.membros.count }}</td>
+            <td><a class="nav-item" href="{% url 'dashboard:ugroup_detalhe' ugroup.pk %}">Abrir</a></td>
+          </tr>
+        {% empty %}
+          <tr>
+            <td colspan="5" class="muted">
+              {% if pode_gerenciar %}Nenhum uGroup cadastrado ainda.{% else %}Você não lidera nenhum uGroup no momento.{% endif %}
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function mudarCampusVisualizacao(valor) {
+  const params = new URLSearchParams(window.location.search);
+  if (valor) { params.set('campus', valor); } else { params.delete('campus'); }
+  window.location.search = params.toString();
+}
+</script>
+{% endblock %}

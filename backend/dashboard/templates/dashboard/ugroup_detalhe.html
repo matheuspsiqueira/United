@@ -1,0 +1,88 @@
+{% extends 'dashboard/base.html' %}
+{% block page_title %}{{ ugroup.nome }}{% endblock %}
+{% block topbar_actions %}
+  {% if pode_editar_ugroup %}
+    <a class="btn-ghost-sm" href="{% url 'dashboard:ugroup_editar' ugroup.pk %}">Editar dados</a>
+    <a class="btn-ghost-sm" data-modal-url="{% url 'dashboard:ugroup_lider_adicionar' ugroup.pk %}">Adicionar líder</a>
+  {% endif %}
+  <a class="approve-btn" data-modal-url="{% url 'dashboard:ugroup_frequencia_registrar' ugroup.pk %}">Registrar frequência</a>
+  <a class="btn-ghost-sm" data-modal-url="{% url 'dashboard:ugroup_membro_adicionar' ugroup.pk %}">Cadastrar no uGroup</a>
+  <a class="btn-ghost-sm" data-modal-url="{% url 'dashboard:ugroup_membros_editar' ugroup.pk %}">Editar membros</a>
+  {% if pode_editar_ugroup %}
+    <form method="post" action="{% url 'dashboard:ugroup_excluir' ugroup.pk %}" style="display:inline;" onsubmit="return confirm('Excluir esse uGroup? Essa ação não pode ser desfeita.');">
+      {% csrf_token %}
+      <button class="btn-danger-sm" type="submit">Excluir</button>
+    </form>
+  {% endif %}
+{% endblock %}
+{% block content %}
+
+<div class="form-card">
+  <div class="form-card-header"><h2>Dados do uGroup</h2></div>
+  <div class="field-row">
+    <div>
+      <label>Campus</label>
+      <input type="text" value="{{ ugroup.campus.nome }}" disabled>
+    </div>
+    <div>
+      <label>Endereço</label>
+      <input type="text" value="{{ ugroup.endereco }}" disabled>
+    </div>
+  </div>
+  <div class="field-row">
+    <div>
+      <label>Dia e horário</label>
+      <input type="text" value="{{ ugroup.get_dia_semana_display }} às {{ ugroup.horario|time:'H:i' }}" disabled>
+    </div>
+    <div>
+      <label>Membros ativos</label>
+      <input type="text" value="{{ ugroup.membros.count }}" disabled>
+    </div>
+  </div>
+  {% if ugroup.pastor_apoio %}
+    <label>Pastor de apoio</label>
+    <input type="text" value="{{ ugroup.pastor_apoio }}" disabled>
+  {% endif %}
+  {% if ugroup.observacao %}
+    <label>Observação</label>
+    <input type="text" value="{{ ugroup.observacao }}" disabled>
+  {% endif %}
+
+  <label>Líderes</label>
+  <div class="chip-group">
+    {% for lider in ugroup.lideres.all %}
+      <span class="chip primary">
+        {{ lider.nome_completo }}
+        {% if pode_editar_ugroup %}
+          <form method="post" action="{% url 'dashboard:ugroup_lider_remover' ugroup.pk lider.pk %}" style="display:inline;">
+            {% csrf_token %}
+            <button type="submit" class="chip-remove">✕</button>
+          </form>
+        {% endif %}
+      </span>
+    {% empty %}
+      <span class="muted">Nenhum líder cadastrado ainda.</span>
+    {% endfor %}
+  </div>
+</div>
+
+<div class="section-head">
+  <div class="modal-section-title">Últimos encontros</div>
+</div>
+
+<div class="table-wrap">
+  <table class="data-table">
+    <thead><tr><th>Data</th><th>Presentes</th></tr></thead>
+    <tbody>
+      {% for encontro in encontros %}
+        <tr>
+          <td>{{ encontro.data|date:"d/m/Y" }}</td>
+          <td>{{ encontro.total_presentes }} de {{ ugroup.membros.count }}</td>
+        </tr>
+      {% empty %}
+        <tr><td colspan="2" class="muted">Nenhum encontro registrado ainda.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}
