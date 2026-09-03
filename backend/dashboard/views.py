@@ -173,11 +173,21 @@ class CadastrosPendentesListView(DashboardAccessMixin, ListView):
         escopo = self.escopo
         if escopo['campus'] is not None:
             qs = qs.filter(campus=escopo['campus'])
+        else:
+            campus_id = self.request.GET.get('campus')
+            if campus_id:
+                qs = qs.filter(campus_id=campus_id)
         return qs
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
-        ctx['escopo'] = self.escopo
+        escopo = self.escopo
+        ctx['escopo'] = escopo
+
+        if escopo['campus'] is None:
+            ctx['campi'] = Campus.objects.all().order_by('nome')
+
+        ctx['campus_selecionado'] = self.request.GET.get('campus', '')
         return ctx
 
 
@@ -400,6 +410,10 @@ class CandidaturasVoluntarioListView(DashboardAccessMixin, ListView):
 
         if escopo['campus'] is not None:
             qs = qs.filter(membro__campus=escopo['campus'])
+        else:
+            campus_id = self.request.GET.get('campus')
+            if campus_id:
+                qs = qs.filter(membro__campus_id=campus_id)
 
         if escopo['nivel'] == 'lider':
             deptos_ids = [d.id for d in escopo['departamentos']]
@@ -414,7 +428,13 @@ class CandidaturasVoluntarioListView(DashboardAccessMixin, ListView):
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
-        ctx['escopo'] = self.escopo
+        escopo = self.escopo
+        ctx['escopo'] = escopo
+
+        if escopo['campus'] is None:
+            ctx['campi'] = Campus.objects.all().order_by('nome')
+
+        ctx['campus_selecionado'] = self.request.GET.get('campus', '')
         return ctx
 
 
@@ -538,19 +558,28 @@ class UsuarioPermissoesView(DashboardAccessMixin, View):
             for campo in ('acesso_dashboard', 'aprova_membros', 'edita_membros', 'visao_geral_voluntarios')
         }
 
+        departamento_atual = usuario.voluntarioperfil.departamento if usuario.role == 'voluntario' and hasattr(usuario, 'voluntarioperfil') else None
+
         if usuario.role == 'voluntario':
-            departamento = usuario.voluntarioperfil.departamento if hasattr(usuario, 'voluntarioperfil') else None
-            base_flags = permissoes_departamentos([departamento] if departamento else [])
+            base_flags = permissoes_departamentos([departamento_atual] if departamento_atual else [])
+            departamentos_para_trocar_voluntario = Departamento.objects.exclude(
+                pk=departamento_atual.pk
+            ).order_by('nome') if departamento_atual else Departamento.objects.order_by('nome')
         else:
             base_flags = permissoes_departamentos(list(usuario.departamentos_liderados.all()))
+            departamentos_para_trocar_voluntario = None
 
         contexto = {
             'usuario_alvo': usuario,
             'overrides': overrides,
             'base_flags': base_flags,
-            'departamento_atual': usuario.voluntarioperfil.departamento if usuario.role == 'voluntario' and hasattr(usuario, 'voluntarioperfil') else None,
+            'departamento_atual': departamento_atual,
+            'departamentos_para_trocar_voluntario': departamentos_para_trocar_voluntario,
             'departamentos_liderados_atual': usuario.departamentos_liderados.all(),
             'departamentos_disponiveis': Departamento.objects.order_by('nome'),
+            'departamentos_disponiveis_para_trocar': Departamento.objects.exclude(
+                pk__in=usuario.departamentos_liderados.all()
+            ).order_by('nome'),
             'ugroups_liderados_atual': usuario.ugroups_liderados.filter(ativo=True).order_by('nome'),
             'ugroups_disponiveis': UGroup.objects.filter(
                 campus=usuario.campus, ativo=True
@@ -561,6 +590,28 @@ class UsuarioPermissoesView(DashboardAccessMixin, View):
         if request.headers.get('X-Requested-With') == 'fetch':
             return render(request, 'dashboard/partials/usuario_permissoes_modal.html', contexto)
         return render(request, 'dashboard/usuario_permissoes.html', contexto)
+
+    def _demover_para(self, usuario, novo_role, departamento_id=None):
+        """Rebaixa o usuário quando ele fica sem nenhuma liderança."""
+        if novo_role == 'voluntario':
+            if not departamento_id:
+                raise PermissionDenied('Selecione o departamento em que a pessoa continuará como voluntária.')
+            usuario.role = 'voluntario'
+            usuario.save(update_fields=['role'])
+            VoluntarioPerfil.objects.update_or_create(
+                usuario=usuario,
+                defaults={'departamento_id': departamento_id, 'data_aprovacao': timezone.now().date()},
+            )
+        elif novo_role == 'membro':
+            usuario.role = 'membro'
+            usuario.save(update_fields=['role'])
+            VoluntarioPerfil.objects.filter(usuario=usuario).delete()
+            PermissaoIndividual.objects.filter(usuario=usuario).delete()
+        else:
+            raise PermissionDenied(
+                'Essa é a última liderança dessa pessoa — escolha se ela vira voluntária '
+                'de algum departamento ou membro.'
+            )
 
     def post(self, request, *args, **kwargs):
         usuario = self.get_usuario()
@@ -579,6 +630,31 @@ class UsuarioPermissoesView(DashboardAccessMixin, View):
             overrides.save()
             messages.success(request, f'Permissões de {usuario.nome_completo} atualizadas.')
 
+        # --- Departamento (voluntário raso) ---
+
+        elif acao == 'trocar_departamento_voluntario':
+            if usuario.role != 'voluntario':
+                raise PermissionDenied('Esse usuário não é voluntário.')
+            departamento_id = request.POST.get('departamento_novo_voluntario')
+            if not departamento_id:
+                raise PermissionDenied('Selecione o novo departamento.')
+            VoluntarioPerfil.objects.update_or_create(
+                usuario=usuario,
+                defaults={'departamento_id': departamento_id, 'data_aprovacao': timezone.now().date()},
+            )
+            messages.success(request, f'{usuario.nome_completo} foi movido de departamento.')
+
+        elif acao == 'remover_departamento_voluntario':
+            if usuario.role != 'voluntario':
+                raise PermissionDenied('Esse usuário não é voluntário.')
+            usuario.role = 'membro'
+            usuario.save(update_fields=['role'])
+            VoluntarioPerfil.objects.filter(usuario=usuario).delete()
+            PermissaoIndividual.objects.filter(usuario=usuario).delete()
+            messages.success(request, f'{usuario.nome_completo} agora é membro (saiu do departamento).')
+
+        # --- Promoção a líder (a partir de voluntário) ---
+
         elif acao == 'tornar_lider':
             if usuario.role != 'voluntario':
                 raise PermissionDenied('Só é possível promover quem já é voluntário.')
@@ -590,30 +666,6 @@ class UsuarioPermissoesView(DashboardAccessMixin, View):
             usuario.departamentos_liderados.set(departamentos_ids)
             VoluntarioPerfil.objects.filter(usuario=usuario).delete()
             messages.success(request, f'{usuario.nome_completo} agora é líder.')
-
-        elif acao == 'remover_lideranca':
-            if usuario.role != 'lider':
-                raise PermissionDenied('Esse usuário não é líder.')
-            novo_role = request.POST.get('novo_role')
-            usuario.departamentos_liderados.clear()
-
-            if novo_role == 'voluntario':
-                departamento_id = request.POST.get('departamento_voluntario')
-                if not departamento_id:
-                    raise PermissionDenied('Selecione o departamento em que a pessoa continuará como voluntária.')
-                usuario.role = 'voluntario'
-                usuario.save(update_fields=['role'])
-                VoluntarioPerfil.objects.update_or_create(
-                    usuario=usuario,
-                    defaults={'departamento_id': departamento_id, 'data_aprovacao': timezone.now().date()},
-                )
-            else:
-                usuario.role = 'membro'
-                usuario.save(update_fields=['role'])
-                VoluntarioPerfil.objects.filter(usuario=usuario).delete()
-                PermissaoIndividual.objects.filter(usuario=usuario).delete()
-
-            messages.success(request, f'Liderança de {usuario.nome_completo} removida.')
 
         elif acao == 'tornar_lider_ugroup':
             if usuario.role not in ('voluntario', 'lider'):
@@ -629,6 +681,69 @@ class UsuarioPermissoesView(DashboardAccessMixin, View):
                 usuario.save(update_fields=['role'])
                 VoluntarioPerfil.objects.filter(usuario=usuario).delete()
             messages.success(request, f'{usuario.nome_completo} agora lidera {ugroups.count()} uGroup(s).')
+
+        # --- Departamento (líder) ---
+
+        elif acao == 'adicionar_lideranca_departamento':
+            if usuario.role != 'lider':
+                raise PermissionDenied('Esse usuário não é líder.')
+            departamentos_ids = request.POST.getlist('departamentos_adicionar')
+            if not departamentos_ids:
+                raise PermissionDenied('Selecione ao menos um departamento pra adicionar.')
+            for departamento_id in departamentos_ids:
+                usuario.departamentos_liderados.add(departamento_id)
+            messages.success(request, f'{usuario.nome_completo} agora também lidera departamento(s) adicionais.')
+
+        elif acao == 'trocar_lideranca_departamento':
+            if usuario.role != 'lider':
+                raise PermissionDenied('Esse usuário não é líder.')
+            departamento_antigo_id = request.POST.get('departamento_antigo')
+            departamento_novo_id = request.POST.get('departamento_novo')
+            if not departamento_antigo_id or not departamento_novo_id:
+                raise PermissionDenied('Selecione o departamento de origem e o de destino.')
+            if not usuario.departamentos_liderados.filter(pk=departamento_antigo_id).exists():
+                raise PermissionDenied('Esse usuário não lidera esse departamento.')
+            usuario.departamentos_liderados.remove(departamento_antigo_id)
+            usuario.departamentos_liderados.add(departamento_novo_id)
+            messages.success(request, f'{usuario.nome_completo} trocou de departamento liderado.')
+
+        elif acao == 'remover_lideranca_departamento':
+            if usuario.role != 'lider':
+                raise PermissionDenied('Esse usuário não é líder.')
+            departamento_id = request.POST.get('departamento_id')
+            if not usuario.departamentos_liderados.filter(pk=departamento_id).exists():
+                raise PermissionDenied('Esse usuário não lidera esse departamento.')
+
+            resta_outra_lideranca = (
+                usuario.departamentos_liderados.exclude(pk=departamento_id).exists()
+                or usuario.ugroups_liderados.exists()
+            )
+
+            if resta_outra_lideranca:
+                usuario.departamentos_liderados.remove(departamento_id)
+                messages.success(request, f'{usuario.nome_completo} não lidera mais esse departamento.')
+            else:
+                novo_role = request.POST.get('novo_role')
+                self._demover_para(usuario, novo_role, request.POST.get('departamento_voluntario'))
+                usuario.departamentos_liderados.remove(departamento_id)
+                messages.success(request, f'Liderança de {usuario.nome_completo} removida.')
+
+        # --- uGroup (líder) ---
+
+        elif acao == 'trocar_lideranca_ugroup':
+            if usuario.role != 'lider':
+                raise PermissionDenied('Esse usuário não é líder.')
+            ugroup_antigo_id = request.POST.get('ugroup_antigo')
+            ugroup_novo_id = request.POST.get('ugroup_novo')
+            if not ugroup_antigo_id or not ugroup_novo_id:
+                raise PermissionDenied('Selecione o uGroup de origem e o de destino.')
+            ugroup_antigo = get_object_or_404(UGroup, pk=ugroup_antigo_id, campus=usuario.campus)
+            ugroup_novo = get_object_or_404(UGroup, pk=ugroup_novo_id, campus=usuario.campus)
+            if usuario not in ugroup_antigo.lideres.all():
+                raise PermissionDenied('Esse usuário não lidera esse uGroup.')
+            ugroup_antigo.lideres.remove(usuario)
+            ugroup_novo.lideres.add(usuario)
+            messages.success(request, f'{usuario.nome_completo} trocou de uGroup liderado.')
 
         elif acao == 'remover_lideranca_ugroup':
             ugroup_id = request.POST.get('ugroup_id')
@@ -646,29 +761,21 @@ class UsuarioPermissoesView(DashboardAccessMixin, View):
                 messages.success(request, f'{usuario.nome_completo} não lidera mais {ugroup.nome}.')
             else:
                 novo_role = request.POST.get('novo_role_ugroup')
-                if novo_role == 'voluntario':
-                    departamento_id = request.POST.get('departamento_voluntario_ugroup')
-                    if not departamento_id:
-                        raise PermissionDenied('Selecione o departamento em que a pessoa continuará como voluntária.')
-                    ugroup.lideres.remove(usuario)
-                    usuario.role = 'voluntario'
-                    usuario.save(update_fields=['role'])
-                    VoluntarioPerfil.objects.update_or_create(
-                        usuario=usuario,
-                        defaults={'departamento_id': departamento_id, 'data_aprovacao': timezone.now().date()},
-                    )
-                elif novo_role == 'membro':
-                    ugroup.lideres.remove(usuario)
-                    usuario.role = 'membro'
-                    usuario.save(update_fields=['role'])
-                    VoluntarioPerfil.objects.filter(usuario=usuario).delete()
-                    PermissaoIndividual.objects.filter(usuario=usuario).delete()
-                else:
-                    raise PermissionDenied(
-                        'Essa é a última liderança dessa pessoa — escolha se ela vira voluntária '
-                        'de algum departamento ou membro.'
-                    )
+                self._demover_para(usuario, novo_role, request.POST.get('departamento_voluntario_ugroup'))
+                ugroup.lideres.remove(usuario)
                 messages.success(request, f'Liderança de uGroup de {usuario.nome_completo} removida.')
+
+        # --- Liderança (visão geral) ---
+
+        elif acao == 'remover_toda_lideranca':
+            if usuario.role != 'lider':
+                raise PermissionDenied('Esse usuário não é líder.')
+            novo_role = request.POST.get('novo_role_total')
+            self._demover_para(usuario, novo_role, request.POST.get('departamento_voluntario_total'))
+            usuario.departamentos_liderados.clear()
+            for ugroup in usuario.ugroups_liderados.all():
+                ugroup.lideres.remove(usuario)
+            messages.success(request, f'Toda a liderança de {usuario.nome_completo} foi removida.')
 
         return redirect('dashboard:voluntarios')
 

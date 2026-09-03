@@ -74,7 +74,13 @@
           <td>{{ voluntario.campus.nome|default:"—" }}</td>
           <td>
             {% if voluntario.role == 'lider' %}
-              Líder — {% for d in voluntario.departamentos_liderados.all %}{{ d.nome }}{% if not forloop.last %}, {% endif %}{% endfor %}
+              Líder —
+              {% with deptos=voluntario.departamentos_liderados.all ugroups=voluntario.ugroups_liderados.all %}
+                {% if deptos %}{% for d in deptos %}{{ d.nome }}{% if not forloop.last %}, {% endif %}{% endfor %}{% endif %}
+                {% if deptos and ugroups %} · {% endif %}
+                {% if ugroups %}{% for g in ugroups %}uGroup {{ g.nome }}{% if not forloop.last %}, {% endif %}{% endfor %}{% endif %}
+                {% if not deptos and not ugroups %}—{% endif %}
+              {% endwith %}
             {% else %}
               Voluntário — {{ voluntario.voluntarioperfil.departamento.nome|default:"—" }}
             {% endif %}

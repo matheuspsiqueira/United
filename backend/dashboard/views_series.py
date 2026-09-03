@@ -4,6 +4,7 @@ from django.http import Http404
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views import View
 from django.views.generic import ListView
+from campus.models import Campus
 
 from series.models import Episodio, Serie
 
@@ -21,6 +22,10 @@ class SerieListView(DashboardAccessMixin, ListView):
         qs = Serie.objects.select_related('campus').prefetch_related('episodios').order_by('campus__nome', '-data_lancamento')
         if self.escopo['campus'] is not None:
             qs = qs.filter(campus=self.escopo['campus'])
+        else:
+            campus_id = self.request.GET.get('campus')
+            if campus_id:
+                qs = qs.filter(campus_id=campus_id)
         return qs
 
     def get_context_data(self, **kwargs):
@@ -31,12 +36,19 @@ class SerieListView(DashboardAccessMixin, ListView):
         ctx['pode_editar'] = escopo['pode_editar_conteudo']
 
         if escopo['campus'] is None:
-            agrupado = {}
-            for serie in ctx['series']:
-                agrupado.setdefault(serie.campus, []).append(serie)
-            ctx['series_por_campus'] = sorted(agrupado.items(), key=lambda item: item[0].nome)
+            ctx['campi'] = Campus.objects.all().order_by('nome')
+            campus_id = self.request.GET.get('campus')
+            if campus_id:
+                ctx['series_por_campus'] = None
+            else:
+                agrupado = {}
+                for serie in ctx['series']:
+                    agrupado.setdefault(serie.campus, []).append(serie)
+                ctx['series_por_campus'] = sorted(agrupado.items(), key=lambda item: item[0].nome)
         else:
             ctx['series_por_campus'] = None
+
+        ctx['campus_selecionado'] = self.request.GET.get('campus', '')
 
         return ctx
 

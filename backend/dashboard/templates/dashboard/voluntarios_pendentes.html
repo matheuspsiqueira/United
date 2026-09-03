@@ -1,5 +1,21 @@
 {% extends 'dashboard/base.html' %}
+
 {% block page_title %}Fila de voluntários{% endblock %}
+
+{% block topbar_actions %}
+{% if campi %}
+<div class="viewer-control">
+  <span class="label">Visualizar</span>
+  <select id="viewerCampus" onchange="mudarCampusVisualizacao(this.value)">
+    <option value="">Todos os campi</option>
+    {% for c in campi %}
+      <option value="{{ c.id }}" {% if campus_selecionado == c.id|stringformat:"s" %}selected{% endif %}>{{ c.nome }}</option>
+    {% endfor %}
+  </select>
+</div>
+{% endif %}
+{% endblock %}
+
 {% block content %}
 
 <div class="tabs">
@@ -38,4 +54,15 @@
     </tbody>
   </table>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function mudarCampusVisualizacao(valor) {
+  const params = new URLSearchParams(window.location.search);
+  if (valor) { params.set('campus', valor); } else { params.delete('campus'); }
+  params.delete('page');
+  window.location.search = params.toString();
+}
+</script>
 {% endblock %}

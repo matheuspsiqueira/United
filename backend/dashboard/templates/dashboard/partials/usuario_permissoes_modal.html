@@ -1,3 +1,24 @@
+<style>
+  .perm-tab-radio { display: none; }
+  .perm-tabs { display: flex; gap: 4px; border-bottom: 1px solid rgba(255,255,255,0.08); margin-bottom: 18px; flex-wrap: wrap; }
+  .perm-tab-btn { padding: 8px 14px; cursor: pointer; border-radius: 8px 8px 0 0; font-size: 13px; color: var(--muted-text, #9a9aa5); user-select: none; }
+  .perm-panel { display: none; }
+  #perm_tab_departamentos:checked ~ .perm-tabs label[for="perm_tab_departamentos"],
+  #perm_tab_lideranca:checked ~ .perm-tabs label[for="perm_tab_lideranca"],
+  #perm_tab_ugroups:checked ~ .perm-tabs label[for="perm_tab_ugroups"],
+  #perm_tab_permissoes:checked ~ .perm-tabs label[for="perm_tab_permissoes"] {
+    color: inherit;
+    font-weight: 600;
+    border-bottom: 2px solid currentColor;
+  }
+  #perm_tab_departamentos:checked ~ .perm-panel-departamentos,
+  #perm_tab_lideranca:checked ~ .perm-panel-lideranca,
+  #perm_tab_ugroups:checked ~ .perm-panel-ugroups,
+  #perm_tab_permissoes:checked ~ .perm-panel-permissoes {
+    display: block;
+  }
+</style>
+
 <div class="modal-card wide">
   <div class="modal-header">
     <h3>Permissões — {{ usuario_alvo.nome_completo }}</h3>
@@ -5,177 +26,437 @@
   </div>
 
   <div class="modal-body">
-    <div class="modal-section-title">Flags de acesso</div>
+    <input type="radio" name="perm_tab" id="perm_tab_departamentos" class="perm-tab-radio" checked>
+    <input type="radio" name="perm_tab" id="perm_tab_lideranca" class="perm-tab-radio">
+    {% if usuario_alvo.role == 'lider' %}
+      <input type="radio" name="perm_tab" id="perm_tab_ugroups" class="perm-tab-radio">
+    {% endif %}
+    <input type="radio" name="perm_tab" id="perm_tab_permissoes" class="perm-tab-radio">
 
-    <form method="post" action="{% url 'dashboard:usuario_permissoes' usuario_alvo.pk %}">
-      {% csrf_token %}
-      <input type="hidden" name="acao" value="salvar_flags">
+    <div class="perm-tabs">
+      <label class="perm-tab-btn" for="perm_tab_departamentos">Departamentos</label>
+      <label class="perm-tab-btn" for="perm_tab_lideranca">Liderança</label>
+      {% if usuario_alvo.role == 'lider' %}
+        <label class="perm-tab-btn" for="perm_tab_ugroups">uGroups</label>
+      {% endif %}
+      <label class="perm-tab-btn" for="perm_tab_permissoes">Permissões</label>
+    </div>
 
-      <div class="permissao-field">
-        <div class="permissao-field-head">
-          <span class="field-name">Acesso à dashboard</span>
-          <span class="field-default">padrão: {{ base_flags.acesso_dashboard|yesno:"sim,não" }}</span>
-        </div>
-        <div class="segmented">
-          <input type="radio" id="ad_padrao" name="acesso_dashboard" value="padrao" {% if overrides.acesso_dashboard is None %}checked{% endif %}>
-          <label for="ad_padrao">Padrão</label>
-          <input type="radio" id="ad_sim" name="acesso_dashboard" value="sim" {% if overrides.acesso_dashboard == True %}checked{% endif %}>
-          <label for="ad_sim" class="opt-sim">Sim</label>
-          <input type="radio" id="ad_nao" name="acesso_dashboard" value="nao" {% if overrides.acesso_dashboard == False %}checked{% endif %}>
-          <label for="ad_nao" class="opt-nao">Não</label>
-        </div>
-      </div>
+    <!-- ===================== DEPARTAMENTOS ===================== -->
+    <div class="perm-panel perm-panel-departamentos">
 
-      <div class="permissao-field">
-        <div class="permissao-field-head">
-          <span class="field-name">Aprova cadastros de membros</span>
-          <span class="field-default">padrão: {{ base_flags.aprova_membros|yesno:"sim,não" }}</span>
+      {% if usuario_alvo.role == 'voluntario' %}
+        <div class="modal-section-title">Departamento atual</div>
+        <div class="chip-group">
+          {% if departamento_atual %}
+            <span class="chip primary">{{ departamento_atual.nome }}</span>
+          {% else %}
+            <span class="muted">Nenhum departamento definido</span>
+          {% endif %}
         </div>
-        <div class="segmented">
-          <input type="radio" id="am_padrao" name="aprova_membros" value="padrao" {% if overrides.aprova_membros is None %}checked{% endif %}>
-          <label for="am_padrao">Padrão</label>
-          <input type="radio" id="am_sim" name="aprova_membros" value="sim" {% if overrides.aprova_membros == True %}checked{% endif %}>
-          <label for="am_sim" class="opt-sim">Sim</label>
-          <input type="radio" id="am_nao" name="aprova_membros" value="nao" {% if overrides.aprova_membros == False %}checked{% endif %}>
-          <label for="am_nao" class="opt-nao">Não</label>
-        </div>
-      </div>
 
-      <div class="permissao-field">
-        <div class="permissao-field-head">
-          <span class="field-name">Edita cadastros de membros</span>
-          <span class="field-default">padrão: {{ base_flags.edita_membros|yesno:"sim,não" }}</span>
-        </div>
-        <div class="segmented">
-          <input type="radio" id="em_padrao" name="edita_membros" value="padrao" {% if overrides.edita_membros is None %}checked{% endif %}>
-          <label for="em_padrao">Padrão</label>
-          <input type="radio" id="em_sim" name="edita_membros" value="sim" {% if overrides.edita_membros == True %}checked{% endif %}>
-          <label for="em_sim" class="opt-sim">Sim</label>
-          <input type="radio" id="em_nao" name="edita_membros" value="nao" {% if overrides.edita_membros == False %}checked{% endif %}>
-          <label for="em_nao" class="opt-nao">Não</label>
-        </div>
-      </div>
+        {% if departamento_atual %}
+          <form method="post" action="{% url 'dashboard:usuario_permissoes' usuario_alvo.pk %}" style="margin-top:16px;" onsubmit="return confirm('Remover {{ usuario_alvo.nome_completo }} do departamento? Ela vira apenas membro.');">
+            {% csrf_token %}
+            <input type="hidden" name="acao" value="remover_departamento_voluntario">
+            <button type="submit" class="btn-danger-sm">Remover do departamento (virar membro)</button>
+          </form>
+        {% endif %}
 
-      <div class="permissao-field">
-        <div class="permissao-field-head">
-          <span class="field-name">Visão geral de voluntários</span>
-          <span class="field-default">padrão: {{ base_flags.visao_geral_voluntarios|yesno:"sim,não" }}</span>
-        </div>
-        <div class="segmented">
-          <input type="radio" id="vg_padrao" name="visao_geral_voluntarios" value="padrao" {% if overrides.visao_geral_voluntarios is None %}checked{% endif %}>
-          <label for="vg_padrao">Padrão</label>
-          <input type="radio" id="vg_sim" name="visao_geral_voluntarios" value="sim" {% if overrides.visao_geral_voluntarios == True %}checked{% endif %}>
-          <label for="vg_sim" class="opt-sim">Sim</label>
-          <input type="radio" id="vg_nao" name="visao_geral_voluntarios" value="nao" {% if overrides.visao_geral_voluntarios == False %}checked{% endif %}>
-          <label for="vg_nao" class="opt-nao">Não</label>
-        </div>
-      </div>
+        {% if departamentos_para_trocar_voluntario %}
+          <form method="post" action="{% url 'dashboard:usuario_permissoes' usuario_alvo.pk %}" style="margin-top:16px;">
+            {% csrf_token %}
+            <input type="hidden" name="acao" value="trocar_departamento_voluntario">
+            <label style="margin-top:0;">Trocar de departamento</label>
+            <div class="select-wrap">
+              <select name="departamento_novo_voluntario">
+                {% for d in departamentos_para_trocar_voluntario %}
+                  <option value="{{ d.id }}">{{ d.nome }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="modal-footer">
+              <button type="submit" class="submit">Trocar departamento</button>
+            </div>
+          </form>
+        {% endif %}
 
-      <div class="modal-footer">
-        <button type="submit" class="submit">Salvar permissões</button>
-      </div>
-    </form>
-
-    {% if usuario_alvo.role == 'voluntario' %}
-      <div class="modal-section-title">Liderança de departamento</div>
-      <form method="post" action="{% url 'dashboard:usuario_permissoes' usuario_alvo.pk %}">
-        {% csrf_token %}
-        <input type="hidden" name="acao" value="tornar_lider">
-        <div class="checkbox-grid">
-          {% for d in departamentos_disponiveis %}
-            <label class="checkbox-item">
-              <input type="checkbox" name="departamentos_lideranca" value="{{ d.id }}">
-              <span>{{ d.nome }}</span>
-            </label>
+      {% elif usuario_alvo.role == 'lider' %}
+        <div class="modal-section-title">Departamentos liderados</div>
+        <div class="chip-group">
+          {% for d in departamentos_liderados_atual %}
+            <span class="chip primary">{{ d.nome }}</span>
+          {% empty %}
+            <span class="muted">Nenhum</span>
           {% endfor %}
         </div>
-        <div class="modal-footer">
-          <button type="submit" class="submit">Tornar líder de departamento</button>
-        </div>
-      </form>
 
-    {% elif usuario_alvo.role == 'lider' %}
-      <div class="modal-section-title">Liderança de departamento</div>
-      <label style="margin-top:0;">Departamentos liderados atualmente</label>
-      <div class="chip-group">
-        {% for d in departamentos_liderados_atual %}
-          <span class="chip primary">{{ d.nome }}</span>
-        {% endfor %}
-      </div>
+        {% if departamentos_liderados_atual %}
+          <label style="margin-top:16px;">Excluir liderança de um departamento</label>
+          {% for d in departamentos_liderados_atual %}
+            <form method="post" action="{% url 'dashboard:usuario_permissoes' usuario_alvo.pk %}" style="margin-bottom:10px;">
+              {% csrf_token %}
+              <input type="hidden" name="acao" value="remover_lideranca_departamento">
+              <input type="hidden" name="departamento_id" value="{{ d.id }}">
+              <div class="chip-group" style="align-items:center;">
+                <span class="chip primary">{{ d.nome }}</span>
+                {% if departamentos_liderados_atual|length == 1 and not ugroups_liderados_atual %}
+                  <span class="field-default">essa é a última liderança — vira:</span>
+                  <select name="novo_role" onchange="document.getElementById('depto_excluir_voluntario_{{ d.id }}').style.display = this.value === 'voluntario' ? 'inline-block' : 'none';">
+                    <option value="">selecione</option>
+                    <option value="voluntario">Voluntário</option>
+                    <option value="membro">Membro</option>
+                  </select>
+                  <select name="departamento_voluntario" id="depto_excluir_voluntario_{{ d.id }}" style="display:none;">
+                    {% for d2 in departamentos_disponiveis %}
+                      <option value="{{ d2.id }}">{{ d2.nome }}</option>
+                    {% endfor %}
+                  </select>
+                {% endif %}
+                <button type="submit" class="btn-danger-sm" onclick="return confirm('Excluir a liderança de {{ d.nome }}?');">Excluir</button>
+              </div>
+            </form>
+          {% endfor %}
+        {% endif %}
 
-      <form method="post" action="{% url 'dashboard:usuario_permissoes' usuario_alvo.pk %}" style="margin-top:16px;">
-        {% csrf_token %}
-        <input type="hidden" name="acao" value="remover_lideranca">
-        <label style="margin-top:0;">Remover liderança e rebaixar para</label>
-        <div class="select-wrap">
-          <select name="novo_role" onchange="document.getElementById('depto_voluntario_wrap').style.display = this.value === 'voluntario' ? 'block' : 'none';">
-            <option value="voluntario">Voluntário</option>
-            <option value="membro">Membro (sai do departamento)</option>
-          </select>
-        </div>
-        <div id="depto_voluntario_wrap" class="select-wrap">
-          <label>Departamento como voluntário</label>
-          <select name="departamento_voluntario">
-            {% for d in departamentos_disponiveis %}
-              <option value="{{ d.id }}">{{ d.nome }}</option>
-            {% endfor %}
-          </select>
-        </div>
-        <div class="modal-footer">
-          <button type="submit" class="reset-btn">Remover liderança de departamento</button>
-        </div>
-      </form>
-    {% endif %}
+        {% if departamentos_disponiveis_para_trocar %}
+          <form method="post" action="{% url 'dashboard:usuario_permissoes' usuario_alvo.pk %}" style="margin-top:16px;">
+            {% csrf_token %}
+            <input type="hidden" name="acao" value="adicionar_lideranca_departamento">
+            <label style="margin-top:0;">Adicionar liderança de departamento</label>
+            <div class="checkbox-grid">
+              {% for d in departamentos_disponiveis_para_trocar %}
+                <label class="checkbox-item">
+                  <input type="checkbox" name="departamentos_adicionar" value="{{ d.id }}">
+                  <span>{{ d.nome }}</span>
+                </label>
+              {% endfor %}
+            </div>
+            <div class="modal-footer">
+              <button type="submit" class="submit">Adicionar</button>
+            </div>
+          </form>
+        {% endif %}
 
-    {% if usuario_alvo.role != 'apostolo' and usuario_alvo.role != 'pastor_presidente' %}
-    <div class="modal-section-title">Liderança de uGroup</div>
+        {% if departamentos_liderados_atual and departamentos_disponiveis_para_trocar %}
+          <form method="post" action="{% url 'dashboard:usuario_permissoes' usuario_alvo.pk %}" style="margin-top:16px;">
+            {% csrf_token %}
+            <input type="hidden" name="acao" value="trocar_lideranca_departamento">
+            <label style="margin-top:0;">Trocar liderança de departamento</label>
+            <div class="select-wrap">
+              <select name="departamento_antigo">
+                {% for d in departamentos_liderados_atual %}
+                  <option value="{{ d.id }}">Sai de: {{ d.nome }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="select-wrap">
+              <select name="departamento_novo">
+                {% for d in departamentos_disponiveis_para_trocar %}
+                  <option value="{{ d.id }}">Entra em: {{ d.nome }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="modal-footer">
+              <button type="submit" class="submit">Trocar departamento</button>
+            </div>
+          </form>
+        {% endif %}
+      {% endif %}
+    </div>
 
-    {% if ugroups_liderados_atual %}
-      <label style="margin-top:0;">uGroups liderados atualmente</label>
-      {% for g in ugroups_liderados_atual %}
-        <form method="post" action="{% url 'dashboard:usuario_permissoes' usuario_alvo.pk %}" style="margin-bottom:10px;">
+    <!-- ===================== LIDERANÇA ===================== -->
+    <div class="perm-panel perm-panel-lideranca">
+
+      {% if usuario_alvo.role == 'voluntario' %}
+        <div class="modal-section-title">Liderança</div>
+        <p class="muted" style="margin-top:0;">{{ usuario_alvo.nome_completo }} ainda não lidera nada.</p>
+
+        <form method="post" action="{% url 'dashboard:usuario_permissoes' usuario_alvo.pk %}" style="margin-top:16px;">
           {% csrf_token %}
-          <input type="hidden" name="acao" value="remover_lideranca_ugroup">
-          <input type="hidden" name="ugroup_id" value="{{ g.id }}">
-          <div class="chip-group" style="align-items:center;">
-            <span class="chip primary">{{ g.nome }}</span>
-            <span class="field-default">se essa for a última liderança, vira:</span>
-            <select name="novo_role_ugroup" onchange="document.getElementById('depto_ugroup_{{ g.id }}').style.display = this.value === 'voluntario' ? 'inline-block' : 'none';">
-              <option value="">— não é a última —</option>
+          <input type="hidden" name="acao" value="tornar_lider">
+          <label style="margin-top:0;">Tornar líder de departamento</label>
+          <div class="checkbox-grid">
+            {% for d in departamentos_disponiveis %}
+              <label class="checkbox-item">
+                <input type="checkbox" name="departamentos_lideranca" value="{{ d.id }}">
+                <span>{{ d.nome }}</span>
+              </label>
+            {% endfor %}
+          </div>
+          <div class="modal-footer">
+            <button type="submit" class="submit">Tornar líder de departamento</button>
+          </div>
+        </form>
+
+        {% if ugroups_disponiveis %}
+          <form method="post" action="{% url 'dashboard:usuario_permissoes' usuario_alvo.pk %}" style="margin-top:16px;">
+            {% csrf_token %}
+            <input type="hidden" name="acao" value="tornar_lider_ugroup">
+            <label style="margin-top:0;">Tornar líder de uGroup</label>
+            <div class="checkbox-grid">
+              {% for g in ugroups_disponiveis %}
+                <label class="checkbox-item">
+                  <input type="checkbox" name="ugroups_lideranca" value="{{ g.id }}">
+                  <span>{{ g.nome }}</span>
+                </label>
+              {% endfor %}
+            </div>
+            <div class="modal-footer">
+              <button type="submit" class="submit">Tornar líder de uGroup</button>
+            </div>
+          </form>
+        {% endif %}
+
+      {% elif usuario_alvo.role == 'lider' %}
+        <div class="modal-section-title">Liderança atual</div>
+        <div class="chip-group">
+          {% for d in departamentos_liderados_atual %}
+            <span class="chip primary">Depto · {{ d.nome }}</span>
+          {% endfor %}
+          {% for g in ugroups_liderados_atual %}
+            <span class="chip primary">uGroup · {{ g.nome }}</span>
+          {% endfor %}
+        </div>
+
+        {% if departamentos_liderados_atual and departamentos_disponiveis_para_trocar %}
+          <form method="post" action="{% url 'dashboard:usuario_permissoes' usuario_alvo.pk %}" style="margin-top:16px;">
+            {% csrf_token %}
+            <input type="hidden" name="acao" value="trocar_lideranca_departamento">
+            <label style="margin-top:0;">Trocar de departamento</label>
+            <div class="select-wrap">
+              <select name="departamento_antigo">
+                {% for d in departamentos_liderados_atual %}
+                  <option value="{{ d.id }}">Sai de: {{ d.nome }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="select-wrap">
+              <select name="departamento_novo">
+                {% for d in departamentos_disponiveis_para_trocar %}
+                  <option value="{{ d.id }}">Entra em: {{ d.nome }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="modal-footer">
+              <button type="submit" class="submit">Trocar departamento</button>
+            </div>
+          </form>
+        {% endif %}
+
+        {% if ugroups_liderados_atual and ugroups_disponiveis %}
+          <form method="post" action="{% url 'dashboard:usuario_permissoes' usuario_alvo.pk %}" style="margin-top:16px;">
+            {% csrf_token %}
+            <input type="hidden" name="acao" value="trocar_lideranca_ugroup">
+            <label style="margin-top:0;">Trocar de uGroup</label>
+            <div class="select-wrap">
+              <select name="ugroup_antigo">
+                {% for g in ugroups_liderados_atual %}
+                  <option value="{{ g.id }}">Sai de: {{ g.nome }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="select-wrap">
+              <select name="ugroup_novo">
+                {% for g in ugroups_disponiveis %}
+                  <option value="{{ g.id }}">Entra em: {{ g.nome }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="modal-footer">
+              <button type="submit" class="submit">Trocar uGroup</button>
+            </div>
+          </form>
+        {% endif %}
+
+        <div class="modal-section-title" style="margin-top:24px;">Zona de risco</div>
+        <form method="post" action="{% url 'dashboard:usuario_permissoes' usuario_alvo.pk %}" onsubmit="return confirm('Remover TODA a liderança de {{ usuario_alvo.nome_completo }} (departamentos e uGroups)? Isso não pode ser desfeito.');">
+          {% csrf_token %}
+          <input type="hidden" name="acao" value="remover_toda_lideranca">
+          <label style="margin-top:0;">Rebaixar para</label>
+          <div class="select-wrap">
+            <select name="novo_role_total" onchange="document.getElementById('depto_total_wrap').style.display = this.value === 'voluntario' ? 'block' : 'none';">
+              <option value="">selecione</option>
               <option value="voluntario">Voluntário</option>
               <option value="membro">Membro</option>
             </select>
-            <select name="departamento_voluntario_ugroup" id="depto_ugroup_{{ g.id }}" style="display:none;">
+          </div>
+          <div id="depto_total_wrap" class="select-wrap" style="display:none;">
+            <label>Departamento como voluntário</label>
+            <select name="departamento_voluntario_total">
               {% for d in departamentos_disponiveis %}
                 <option value="{{ d.id }}">{{ d.nome }}</option>
               {% endfor %}
             </select>
-            <button type="submit" class="btn-danger-sm">Remover</button>
+          </div>
+          <div class="modal-footer">
+            <button type="submit" class="btn-danger-sm">Remover toda a liderança</button>
           </div>
         </form>
-      {% endfor %}
+      {% endif %}
+    </div>
+
+    <!-- ===================== UGROUPS (só líder) ===================== -->
+    {% if usuario_alvo.role == 'lider' %}
+    <div class="perm-panel perm-panel-ugroups">
+      <div class="modal-section-title">uGroups liderados</div>
+      <div class="chip-group">
+        {% for g in ugroups_liderados_atual %}
+          <span class="chip primary">{{ g.nome }}</span>
+        {% empty %}
+          <span class="muted">Nenhum</span>
+        {% endfor %}
+      </div>
+
+      {% if ugroups_liderados_atual %}
+        <label style="margin-top:16px;">Excluir liderança de um uGroup</label>
+        {% for g in ugroups_liderados_atual %}
+          <form method="post" action="{% url 'dashboard:usuario_permissoes' usuario_alvo.pk %}" style="margin-bottom:10px;">
+            {% csrf_token %}
+            <input type="hidden" name="acao" value="remover_lideranca_ugroup">
+            <input type="hidden" name="ugroup_id" value="{{ g.id }}">
+            <div class="chip-group" style="align-items:center;">
+              <span class="chip primary">{{ g.nome }}</span>
+              {% if not departamentos_liderados_atual and ugroups_liderados_atual|length == 1 %}
+                <span class="field-default">essa é a última liderança — vira:</span>
+                <select name="novo_role_ugroup" onchange="document.getElementById('depto_ugroup_{{ g.id }}').style.display = this.value === 'voluntario' ? 'inline-block' : 'none';">
+                  <option value="">selecione</option>
+                  <option value="voluntario">Voluntário</option>
+                  <option value="membro">Membro</option>
+                </select>
+                <select name="departamento_voluntario_ugroup" id="depto_ugroup_{{ g.id }}" style="display:none;">
+                  {% for d in departamentos_disponiveis %}
+                    <option value="{{ d.id }}">{{ d.nome }}</option>
+                  {% endfor %}
+                </select>
+              {% endif %}
+              <button type="submit" class="btn-danger-sm" onclick="return confirm('Excluir a liderança de {{ g.nome }}?');">Excluir</button>
+            </div>
+          </form>
+        {% endfor %}
+      {% endif %}
+
+      {% if ugroups_disponiveis %}
+        <form method="post" action="{% url 'dashboard:usuario_permissoes' usuario_alvo.pk %}" style="margin-top:16px;">
+          {% csrf_token %}
+          <input type="hidden" name="acao" value="tornar_lider_ugroup">
+          <label style="margin-top:0;">Adicionar liderança de uGroup</label>
+          <div class="checkbox-grid">
+            {% for g in ugroups_disponiveis %}
+              <label class="checkbox-item">
+                <input type="checkbox" name="ugroups_lideranca" value="{{ g.id }}">
+                <span>{{ g.nome }}</span>
+              </label>
+            {% endfor %}
+          </div>
+          <div class="modal-footer">
+            <button type="submit" class="submit">Adicionar</button>
+          </div>
+        </form>
+      {% else %}
+        <p class="muted">Nenhum uGroup disponível no campus para atribuir liderança.</p>
+      {% endif %}
+
+      {% if ugroups_liderados_atual and ugroups_disponiveis %}
+        <form method="post" action="{% url 'dashboard:usuario_permissoes' usuario_alvo.pk %}" style="margin-top:16px;">
+          {% csrf_token %}
+          <input type="hidden" name="acao" value="trocar_lideranca_ugroup">
+          <label style="margin-top:0;">Trocar liderança de uGroup</label>
+          <div class="select-wrap">
+            <select name="ugroup_antigo">
+              {% for g in ugroups_liderados_atual %}
+                <option value="{{ g.id }}">Sai de: {{ g.nome }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="select-wrap">
+            <select name="ugroup_novo">
+              {% for g in ugroups_disponiveis %}
+                <option value="{{ g.id }}">Entra em: {{ g.nome }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="modal-footer">
+            <button type="submit" class="submit">Trocar uGroup</button>
+          </div>
+        </form>
+      {% endif %}
+    </div>
     {% endif %}
 
-    {% if ugroups_disponiveis %}
-      <form method="post" action="{% url 'dashboard:usuario_permissoes' usuario_alvo.pk %}" style="margin-top:16px;">
+    <!-- ===================== PERMISSÕES ===================== -->
+    <div class="perm-panel perm-panel-permissoes">
+      <div class="modal-section-title">Flags de acesso</div>
+
+      <form method="post" action="{% url 'dashboard:usuario_permissoes' usuario_alvo.pk %}">
         {% csrf_token %}
-        <input type="hidden" name="acao" value="tornar_lider_ugroup">
-        <label style="margin-top:0;">Tornar líder de uGroup</label>
-        <div class="checkbox-grid">
-          {% for g in ugroups_disponiveis %}
-            <label class="checkbox-item">
-              <input type="checkbox" name="ugroups_lideranca" value="{{ g.id }}">
-              <span>{{ g.nome }}</span>
-            </label>
-          {% endfor %}
+        <input type="hidden" name="acao" value="salvar_flags">
+
+        <div class="permissao-field">
+          <div class="permissao-field-head">
+            <span class="field-name">Acesso à dashboard</span>
+            <span class="field-default">padrão: {{ base_flags.acesso_dashboard|yesno:"sim,não" }}</span>
+          </div>
+          <div class="segmented">
+            <input type="radio" id="ad_padrao" name="acesso_dashboard" value="padrao" {% if overrides.acesso_dashboard is None %}checked{% endif %}>
+            <label for="ad_padrao">Padrão</label>
+            <input type="radio" id="ad_sim" name="acesso_dashboard" value="sim" {% if overrides.acesso_dashboard == True %}checked{% endif %}>
+            <label for="ad_sim" class="opt-sim">Sim</label>
+            <input type="radio" id="ad_nao" name="acesso_dashboard" value="nao" {% if overrides.acesso_dashboard == False %}checked{% endif %}>
+            <label for="ad_nao" class="opt-nao">Não</label>
+          </div>
         </div>
+
+        <div class="permissao-field">
+          <div class="permissao-field-head">
+            <span class="field-name">Aprova cadastros de membros</span>
+            <span class="field-default">padrão: {{ base_flags.aprova_membros|yesno:"sim,não" }}</span>
+          </div>
+          <div class="segmented">
+            <input type="radio" id="am_padrao" name="aprova_membros" value="padrao" {% if overrides.aprova_membros is None %}checked{% endif %}>
+            <label for="am_padrao">Padrão</label>
+            <input type="radio" id="am_sim" name="aprova_membros" value="sim" {% if overrides.aprova_membros == True %}checked{% endif %}>
+            <label for="am_sim" class="opt-sim">Sim</label>
+            <input type="radio" id="am_nao" name="aprova_membros" value="nao" {% if overrides.aprova_membros == False %}checked{% endif %}>
+            <label for="am_nao" class="opt-nao">Não</label>
+          </div>
+        </div>
+
+        <div class="permissao-field">
+          <div class="permissao-field-head">
+            <span class="field-name">Edita cadastros de membros</span>
+            <span class="field-default">padrão: {{ base_flags.edita_membros|yesno:"sim,não" }}</span>
+          </div>
+          <div class="segmented">
+            <input type="radio" id="em_padrao" name="edita_membros" value="padrao" {% if overrides.edita_membros is None %}checked{% endif %}>
+            <label for="em_padrao">Padrão</label>
+            <input type="radio" id="em_sim" name="edita_membros" value="sim" {% if overrides.edita_membros == True %}checked{% endif %}>
+            <label for="em_sim" class="opt-sim">Sim</label>
+            <input type="radio" id="em_nao" name="edita_membros" value="nao" {% if overrides.edita_membros == False %}checked{% endif %}>
+            <label for="em_nao" class="opt-nao">Não</label>
+          </div>
+        </div>
+
+        <div class="permissao-field">
+          <div class="permissao-field-head">
+            <span class="field-name">Visão geral de voluntários</span>
+            <span class="field-default">padrão: {{ base_flags.visao_geral_voluntarios|yesno:"sim,não" }}</span>
+          </div>
+          <div class="segmented">
+            <input type="radio" id="vg_padrao" name="visao_geral_voluntarios" value="padrao" {% if overrides.visao_geral_voluntarios is None %}checked{% endif %}>
+            <label for="vg_padrao">Padrão</label>
+            <input type="radio" id="vg_sim" name="visao_geral_voluntarios" value="sim" {% if overrides.visao_geral_voluntarios == True %}checked{% endif %}>
+            <label for="vg_sim" class="opt-sim">Sim</label>
+            <input type="radio" id="vg_nao" name="visao_geral_voluntarios" value="nao" {% if overrides.visao_geral_voluntarios == False %}checked{% endif %}>
+            <label for="vg_nao" class="opt-nao">Não</label>
+          </div>
+        </div>
+
         <div class="modal-footer">
-          <button type="submit" class="submit">Tornar líder de uGroup</button>
+          <button type="submit" class="submit">Salvar permissões</button>
         </div>
       </form>
-    {% else %}
-      <p class="muted">Nenhum uGroup disponível no campus para atribuir liderança.</p>
-    {% endif %}
-  {% endif %}
+    </div>
+
   </div>
 </div>

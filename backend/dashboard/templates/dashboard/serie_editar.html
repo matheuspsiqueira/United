@@ -57,6 +57,7 @@
       {% if pode_editar %}
         <div class="form-actions">
           <button class="submit" type="submit">Salvar alterações</button>
+          <button class="btn-danger-sm" type="submit" form="form-excluir-serie" onclick="return confirm('Excluir a série &quot;{{ serie.titulo }}&quot;? Isso remove todos os episódios junto e não pode ser desfeito.');">Excluir série</button>
           <a class="back-link" href="{% url 'dashboard:series' %}">← Voltar pra Séries</a>
         </div>
       {% else %}
@@ -121,6 +122,10 @@
       </div>
     </form>
   </div>
+
+  <form id="form-excluir-serie" method="post" action="{% url 'dashboard:serie_excluir' serie.pk %}" class="visually-hidden">
+    {% csrf_token %}
+  </form>
 {% endif %}
 
 {% endblock %}
